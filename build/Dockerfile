@@ -6,7 +6,7 @@ ARG GITHUB_TOKEN
 ARG COMPONENT_VERSION
 
 ENV USE_VENDORIZED_BUILD_HARNESS=true
-ENV COMPONENT_NAME=rcm-controller
+ENV COMPONENT_NAME=cluster-lifecycle-e2e
 ENV COMPONENT_VERSION="${COMPONENT_VERSION}"
 
 # Install ChromeDriver in build image
@@ -37,8 +37,8 @@ ARG REMOTE_SOURCE_DIR
 RUN microdnf update
 
 # expose env vars for runtime
-ENV KUBECONFIG "/test/resources/hub/kubeconfig.yaml"
-ENV OPTIONS "/test/resources/options.yaml"
+ENV KUBECONFIG "/opt/.kube/config"
+ENV OPTIONS "/resources/options.yaml"
 ENV REPORT_FILE "/results/results.xml"
 ENV GINKGO_DEFAULT_FLAGS "-slowSpecThreshold=120 -timeout 7200s"
 ENV GINKGO_NODES "1"
@@ -52,13 +52,16 @@ ENV E2E_BIN=/usr/local/bin/e2e-test.test \
 
 # install operator binary
 COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test ${E2E_BIN}
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
 
 # Copy resources which contains the options.yaml
 COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/resources /test/resources
 
+RUN  /usr/local/bin/user_setup
+
 VOLUME /results
 
 # execute compiled ginkgo tests
-CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --skip=${GINKGO_SKIP} -nodes=${GINKGO_NODES} --reportFile=${REPORT_FILE} -x -debug -trace e2e-test.test -- -v=3"]
+ENTRYPOINT ["/usr/local/bin/entrypoint-e2e"]
 
-
+USER ${USER_UID}
