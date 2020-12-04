@@ -8,6 +8,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -46,8 +47,22 @@ const (
 	manifestWorkCRDSPostfix                  = "-crds"
 )
 
+// list of manifestwork name for addon crs
+var managedClusteraddOns = []string{
+	"application-manager",
+	"cert-policy-controller",
+	"iam-policy-controller",
+	"policy-controller",
+	"search-collector",
+	"work-manager",
+}
+
 var cloudProviders string
 var ocpImageRelease string
+var kubeconfig string
+var baseDomain string
+var kubeadminUser string
+var kubeadminCredential string
 
 func init() {
 	klog.SetOutput(GinkgoWriter)
@@ -75,32 +90,32 @@ var hubClientDynamic dynamic.Interface
 var hubClientAPIExtension clientset.Interface
 var createTemplateProcessor *templateprocessor.TemplateProcessor
 var hubCreateApplier *libgoapplier.Applier
-var importTamlReader templateprocessor.TemplateReader
+var importYamlReader templateprocessor.TemplateReader
 var hubImportApplier *libgoapplier.Applier
 var hubSelfImportApplier *libgoapplier.Applier
 
 var _ = BeforeSuite(func() {
 	var err error
 	Expect(initVars()).To(BeNil())
-	kubeconfig := libgooptions.GetHubKubeConfig(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, "kube"), libgooptions.TestOptions.Hub.KubeConfigPath)
-	hubClient, err = libgoclient.NewDefaultKubeClient(kubeconfig)
+	//kubeconfig := libgooptions.GetHubKubeConfig(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, "kube"), libgooptions.TestOptions.Hub.KubeConfigPath)
+	hubClient, err = libgoclient.NewKubeClient(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientDynamic, err = libgoclient.NewDefaultKubeClientDynamic(kubeconfig)
+	hubClientDynamic, err = libgoclient.NewKubeClientDynamic(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientAPIExtension, err = libgoclient.NewDefaultKubeClientAPIExtension(kubeconfig)
+	hubClientAPIExtension, err = libgoclient.NewKubeClientAPIExtension(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientClient, err = libgoclient.NewDefaultClient(kubeconfig, client.Options{})
+	hubClientClient, err = libgoclient.NewClient(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext, client.Options{})
 	Expect(err).To(BeNil())
-	createYamlReader := templateprocessor.NewYamlFileReader(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, createClusterScenario))
+	createYamlReader := templateprocessor.NewYamlFileReader(filepath.Join("resources/hub", createClusterScenario))
 	createTemplateProcessor, err = templateprocessor.NewTemplateProcessor(createYamlReader, &templateprocessor.Options{})
 	Expect(err).To(BeNil())
 	hubCreateApplier, err = libgoapplier.NewApplier(createYamlReader, &templateprocessor.Options{}, hubClientClient, nil, nil, nil, nil)
 	Expect(err).To(BeNil())
-	importTamlReader = templateprocessor.NewYamlFileReader(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, importClusterScenario))
-	hubImportApplier, err = libgoapplier.NewApplier(importTamlReader, &templateprocessor.Options{}, hubClientClient, nil, nil, nil, nil)
+	importYamlReader = templateprocessor.NewYamlFileReader(filepath.Join("resources/hub", importClusterScenario))
+	hubImportApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, hubClientClient, nil, nil, nil, nil)
 	Expect(err).To(BeNil())
-	selfImportTamlReader := templateprocessor.NewYamlFileReader(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, selfImportClusterScenario))
-	hubSelfImportApplier, err = libgoapplier.NewApplier(selfImportTamlReader, &templateprocessor.Options{}, hubClientClient, nil, nil, nil, nil)
+	selfImportYamlReader := templateprocessor.NewYamlFileReader(filepath.Join("resources/hub", selfImportClusterScenario))
+	hubSelfImportApplier, err = libgoapplier.NewApplier(selfImportYamlReader, &templateprocessor.Options{}, hubClientClient, nil, nil, nil, nil)
 	Expect(err).To(BeNil())
 })
 
@@ -110,8 +125,51 @@ var _ = AfterSuite(func() {
 func initVars() error {
 
 	err := libgooptions.LoadOptions(libgocmd.End2End.OptionsFile)
+	if err != nil {
+		klog.Errorf("--options error: %v", err)
+		return err
+	}
+	fmt.Println("testoptions: ", libgooptions.TestOptions)
+	//Expect(err).NotTo(HaveOccurred())
 
-	return err
+	if libgooptions.TestOptions.Hub.KubeConfig == "" {
+		if kubeconfig == "" {
+			kubeconfig = os.Getenv("KUBECONFIG")
+		}
+		libgooptions.TestOptions.Hub.KubeConfig = kubeconfig
+	}
+
+	if libgooptions.TestOptions.Hub.BaseDomain != "" {
+		baseDomain = libgooptions.TestOptions.Hub.BaseDomain
+
+		if libgooptions.TestOptions.Hub.MasterURL == "" {
+			libgooptions.TestOptions.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Hub.Name, libgooptions.TestOptions.Hub.BaseDomain)
+		}
+	} else {
+		Expect(baseDomain).NotTo(BeEmpty(), "The `baseDomain` is required.")
+		libgooptions.TestOptions.Hub.BaseDomain = baseDomain
+		libgooptions.TestOptions.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Hub.Name, baseDomain)
+	}
+
+	if libgooptions.TestOptions.Hub.User != "" {
+		kubeadminUser = libgooptions.TestOptions.Hub.User
+	}
+	if libgooptions.TestOptions.Hub.Password != "" {
+		kubeadminCredential = libgooptions.TestOptions.Hub.Password
+	}
+
+	if libgooptions.TestOptions.ManagedClusters != nil && len(libgooptions.TestOptions.ManagedClusters) > 0 {
+		for i, mc := range libgooptions.TestOptions.ManagedClusters {
+			if mc.MasterURL == "" {
+				libgooptions.TestOptions.ManagedClusters[i].MasterURL = fmt.Sprintf("https://api.%s:6443", mc.BaseDomain)
+			}
+			if mc.KubeConfig == "" {
+				libgooptions.TestOptions.ManagedClusters[i].KubeConfig = os.Getenv("IMPORT_KUBECONFIG")
+			}
+		}
+	}
+
+	return nil
 }
 
 func waitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
@@ -156,6 +214,7 @@ func checkManifestWorksApplied(hubClientDynamic dynamic.Interface, clusterName s
 				klog.V(4).Infof("Cluster %s: %s", clusterName, err)
 				return err
 			}
+
 			var condition map[string]interface{}
 			condition, err = libgounstructuredv1.GetConditionByType(mwcrd, "Applied")
 			if err != nil {
@@ -323,4 +382,39 @@ func validateClusterDetached(hubClientDynamic dynamic.Interface, hubClient kuber
 		Expect(deleted).To(BeTrue())
 		klog.V(1).Info("\"open-cluster-management-agent\" namespace on managed cluster deleted")
 	})
+}
+
+func waitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName string) {
+	//gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
+	for _, addOnName := range managedClusteraddOns {
+		Eventually(func() error {
+			klog.V(1).Infof("Checking Add-On %s is available...", addOnName)
+			return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
+		}).Should(BeNil())
+		klog.V(1).Infof("Cluster %s: imported", clusterName)
+	}
+}
+
+func validateClusterAddOnAvailable(hubClientDynamic dynamic.Interface, clusterName string, addOnName string) error {
+
+	gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
+	klog.V(1).Infof("Checking Add-On %s is available...", addOnName)
+	managedClusterAddon, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), addOnName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+
+	var condition map[string]interface{}
+	condition, err = libgounstructuredv1.GetConditionByType(managedClusterAddon, "Available")
+	if err != nil {
+		klog.V(4).Infof("Add-On %s: %s", addOnName, err)
+		return err
+	}
+	klog.V(4).Info(condition)
+	if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
+		klog.V(1).Infof("Add-On %s is available...", addOnName)
+		return nil
+	}
+	err = fmt.Errorf("Add-On %s: status not found or not true", addOnName)
+	klog.V(4).Infof("Add-On %s: %s", addOnName, err)
+	return err
+
 }

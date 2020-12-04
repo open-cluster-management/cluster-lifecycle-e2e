@@ -28,6 +28,7 @@ import (
 	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
 
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 )
 
@@ -53,7 +54,7 @@ func createCluster(cloud, vendor string) {
 		if cloudProviders != "" && !isRequestedCloudProvider(cloud) {
 			Skip(fmt.Sprintf("Cloud provider %s skipped", cloud))
 		}
-		clusterNameObj, err = libgooptions.NewClusterName(libgooptions.GetOwner(), cloud)
+		clusterNameObj, err = libgooptions.NewClusterName(cloud)
 		Expect(err).To(BeNil())
 		clusterName = clusterNameObj.String()
 		klog.V(1).Infof(`========================= Start Test create cluster %s 
@@ -151,7 +152,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterName:          clusterName,
 				ManagedClusterCloud:         cloud,
 				ManagedClusterVendor:        vendor,
-				ManagedClusterSSHPrivateKey: libgooptions.TestOptions.Connection.SSHPrivateKey,
+				ManagedClusterSSHPrivateKey: libgooptions.TestOptions.CloudConnection.SSHPrivateKey,
 				ManagedClusterPullSecret:    string(pullSecret.Data[".dockerconfigjson"]),
 			}
 			Expect(hubCreateApplier.CreateOrUpdateInPath(".",
@@ -171,15 +172,16 @@ with image %s ===============================`, clusterName, imageRefName)
 			klog.V(1).Infof("Cluster %s: Creating install config secret", clusterName)
 			Expect(createInstallConfig(hubCreateApplier, createTemplateProcessor, clusterName, cloud)).To(BeNil())
 
-			imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
-			if imageRefName == "" && ocpImageRelease != "" {
-				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, ocpImageRelease)
+			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
+
+			if libgooptions.TestOptions.OCPReleaseVersion != "" {
+				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPReleaseVersion)
 				Expect(err).To(BeNil())
 			}
-			if imageRefName == "" {
-				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.ManagedClusters.OCPImageRelease)
-				Expect(err).To(BeNil())
-			}
+			// if imageRefName == "" {
+			// 	imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPImageRelease)
+			// 	Expect(err).To(BeNil())
+			// }
 		})
 
 		By("creating the clusterDeployment", func() {
@@ -203,7 +205,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterBaseDomain: baseDomain,
 				//TODO: parametrize the image
 				ManagedClusterImageRefName:  imageRefName,
-				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Connection.Keys.Azure.BaseDomainRGN,
+				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.BaseDomainRGN,
 			}
 			klog.V(1).Infof("Cluster %s: Creating the clusterDeployment", clusterName)
 			Expect(hubCreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
@@ -242,6 +244,10 @@ with image %s ===============================`, clusterName, imageRefName)
 			validateClusterImported(hubClientDynamic, hubClient, clusterName)
 		})
 
+		// When("Cluster Addons, validate...", func() {
+		// 	validateClusterAdddonsAvailable(hubClientDynamic, hubClient, clusterName)
+		// })
+
 		By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
 			klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
 			gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
@@ -275,6 +281,10 @@ with image %s ===============================`, clusterName, imageRefName)
 			waitDetroyed(hubClientDynamic, clusterName)
 		})
 
+		When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
+			waitNamespaceDeleted(hubClient, clusterName)
+		})
+
 		klog.V(1).Infof("========================= End Test create cluster %s ===============================", clusterName)
 
 	})
@@ -303,8 +313,8 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			AWSSecretAccessKey string
 		}{
 			ManagedClusterName: clusterName,
-			AWSAccessKeyID:     libgooptions.TestOptions.Connection.Keys.AWS.AWSAccessKeyID,
-			AWSSecretAccessKey: libgooptions.TestOptions.Connection.Keys.AWS.AWSAccessSecret,
+			AWSAccessKeyID:     libgooptions.TestOptions.CloudConnection.APIKeys.AWS.AWSAccessKeyID,
+			AWSSecretAccessKey: libgooptions.TestOptions.CloudConnection.APIKeys.AWS.AWSAccessSecret,
 		}
 		return hubCreateApplier.CreateOrUpdateResource(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	case "azure":
@@ -316,10 +326,10 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			ManagedClusterSubscriptionId string
 		}{
 			ManagedClusterName:           clusterName,
-			ManagedClusterClientId:       libgooptions.TestOptions.Connection.Keys.Azure.ClientId,
-			ManagedClusterClientSecret:   libgooptions.TestOptions.Connection.Keys.Azure.ClientSecret,
-			ManagedClusterTenantId:       libgooptions.TestOptions.Connection.Keys.Azure.TenantId,
-			ManagedClusterSubscriptionId: libgooptions.TestOptions.Connection.Keys.Azure.SubscriptionId,
+			ManagedClusterClientId:       libgooptions.TestOptions.CloudConnection.APIKeys.Azure.ClientID,
+			ManagedClusterClientSecret:   libgooptions.TestOptions.CloudConnection.APIKeys.Azure.ClientSecret,
+			ManagedClusterTenantId:       libgooptions.TestOptions.CloudConnection.APIKeys.Azure.TenantID,
+			ManagedClusterSubscriptionId: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.SubscriptionID,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	case "gcp":
@@ -328,7 +338,7 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			GCPOSServiceAccountJson string
 		}{
 			ManagedClusterName:      clusterName,
-			GCPOSServiceAccountJson: libgooptions.TestOptions.Connection.Keys.GCP.ServiceAccountJsonKey,
+			GCPOSServiceAccountJson: libgooptions.TestOptions.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 
@@ -361,7 +371,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterName:         clusterName,
 			ManagedClusterBaseDomain:   baseDomain,
 			ManagedClusterRegion:       region,
-			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Connection.SSHPublicKey,
+			ManagedClusterSSHPublicKey: libgooptions.TestOptions.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "azure":
@@ -374,9 +384,9 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		}{
 			ManagedClusterName:          clusterName,
 			ManagedClusterBaseDomain:    baseDomain,
-			ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Connection.Keys.Azure.BaseDomainRGN,
+			ManagedClusterBaseDomainRGN: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.BaseDomainRGN,
 			ManagedClusterRegion:        region,
-			ManagedClusterSSHPublicKey:  libgooptions.TestOptions.Connection.SSHPublicKey,
+			ManagedClusterSSHPublicKey:  libgooptions.TestOptions.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "gcp":
@@ -389,9 +399,9 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		}{
 			ManagedClusterName:         clusterName,
 			ManagedClusterBaseDomain:   baseDomain,
-			ManagedClusterProjectID:    libgooptions.TestOptions.Connection.Keys.GCP.ProjectID,
+			ManagedClusterProjectID:    libgooptions.TestOptions.CloudConnection.APIKeys.GCP.ProjectID,
 			ManagedClusterRegion:       region,
-			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Connection.SSHPublicKey,
+			ManagedClusterSSHPublicKey: libgooptions.TestOptions.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:
@@ -434,7 +444,7 @@ func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameOb
 	}
 	normalizedOCPImageRelease := strings.ReplaceAll(ocpImageReleaseSlice[1], "_", "-")
 	normalizedOCPImageRelease = strings.ToLower(normalizedOCPImageRelease)
-	clusterImageSetName := fmt.Sprintf("%s-%s-%s", clusterNameObj.Owner, normalizedOCPImageRelease, clusterNameObj.GetUID())
+	clusterImageSetName := fmt.Sprintf("%s-%s", normalizedOCPImageRelease, clusterNameObj.GetUID())
 	values := struct {
 		ClusterImageSetName string
 		OCPReleaseImage     string
@@ -480,5 +490,21 @@ func waitDetroyed(hubClientDynamic dynamic.Interface, clusterName string) {
 			return false
 		}, 3600, 60).Should(BeTrue())
 		klog.V(1).Infof("Cluster %s: %s clusterDeployment deleted", clusterName, clusterName)
+	})
+}
+
+func waitNamespaceDeleted(hubClient kubernetes.Interface, clusterName string) {
+	By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
+		klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
+		Eventually(func() bool {
+			klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
+			_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
+			if err != nil {
+				klog.V(1).Info(err)
+				return errors.IsNotFound(err)
+			}
+			return false
+		}, 3600, 60).Should(BeTrue())
+		klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
 	})
 }

@@ -15,6 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
@@ -24,40 +26,40 @@ import (
 	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
 	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
 
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 )
 
 var _ = Describe("Import cluster", func() {
 
 	var err error
-	var managedClustersForManualImport map[string]string
+	//var managedClustersForManualImport map[string]string
 	var managedClusterClient client.Client
 	var managedClusterKubeClient kubernetes.Interface
 	var managedClusterDynamicClient dynamic.Interface
 	var managedClusterApplier *libgoapplier.Applier
 
-	BeforeEach(func() {
-		managedClustersForManualImport, err = libgooptions.GetManagedClusterKubeConfigs(libgooptions.TestOptions.ManagedClusters.ConfigDir, importClusterScenario)
-		Expect(err).To(BeNil())
-		if len(managedClustersForManualImport) == 0 {
-			Skip("Manual import not executed because no managed cluster defined for import")
-		}
-		SetDefaultEventuallyTimeout(15 * time.Minute)
-		SetDefaultEventuallyPollingInterval(10 * time.Second)
-	})
+	// BeforeEach(func() {
+	// 	managedClustersForManualImport, err = libgooptions.GetManagedClusterKubeConfigs(libgooptions.TestOptions.ManagedClusters.ConfigDir, importClusterScenario)
+	// 	Expect(err).To(BeNil())
+	// 	if len(managedClustersForManualImport) == 0 {
+	// 		Skip("Manual import not executed because no managed cluster defined for import")
+	// 	}
+	// 	SetDefaultEventuallyTimeout(15 * time.Minute)
+	// 	SetDefaultEventuallyPollingInterval(10 * time.Second)
+	// })
 
 	It("Given a list of clusters to import (cluster/g0/import-service-resources)", func() {
-		for clusterName, clusterKubeconfig := range managedClustersForManualImport {
-			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", clusterName)
-			managedClusterClient, err = libgoclient.NewDefaultClient(clusterKubeconfig, client.Options{})
+		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
+		for _, managedCluster := range libgooptions.TestOptions.ManagedClusters {
+			var clusterName = managedCluster.Name
+			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", managedCluster.Name)
+			managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})
 			Expect(err).To(BeNil())
-			managedClusterApplier, err = libgoapplier.NewApplier(importTamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
+			managedClusterApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
 			Expect(err).To(BeNil())
-			managedClusterKubeClient, err = libgoclient.NewDefaultKubeClient(clusterKubeconfig)
+			managedClusterKubeClient, err = libgoclient.NewKubeClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
 			Expect(err).To(BeNil())
-			managedClusterDynamicClient, err = libgoclient.NewDefaultKubeClientDynamic(clusterKubeconfig)
+			managedClusterDynamicClient, err = libgoclient.NewKubeClientDynamic(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
 			Expect(err).To(BeNil())
 			Eventually(func() bool {
 				klog.V(1).Infof("Cluster %s: Check CRDs", clusterName)
@@ -65,6 +67,7 @@ var _ = Describe("Import cluster", func() {
 					[]string{
 						"managedclusters.cluster.open-cluster-management.io",
 						"manifestworks.work.open-cluster-management.io",
+						"klusterletaddonconfigs.agent.open-cluster-management.io",
 					})
 				return has
 			}).Should(BeTrue())
@@ -72,7 +75,10 @@ var _ = Describe("Import cluster", func() {
 			Eventually(func() error {
 				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
 					"open-cluster-management",
-					[]string{"managedcluster-import-controller"})
+					[]string{
+						"managedcluster-import-controller",
+						"klusterlet-addon-controller",
+					})
 				return err
 			}).Should(BeNil())
 
@@ -102,15 +108,24 @@ var _ = Describe("Import cluster", func() {
 				}
 			})
 
-			By("creating the managedCluster", func() {
-				klog.V(1).Infof("Cluster %s: Creating the managedCluster", clusterName)
+			By("creating the managedCluster and klusterletaddonconfig", func() {
+				klog.V(1).Infof("Cluster %s: Creating the managedCluster and klusterletaddonconfig", clusterName)
 				values := struct {
 					ManagedClusterName string
 				}{
 					ManagedClusterName: clusterName,
 				}
-				Expect(hubImportApplier.CreateOrUpdateAsset("managedcluster_cr.yaml", values)).To(BeNil())
+				//Expect(hubImportApplier.CreateOrUpdateAsset("managedcluster_cr.yaml", values)).To(BeNil())
+				Expect(hubImportApplier.CreateOrUpdateInPath(".",
+					// []string{
+					// 	"managed_cluster_cr.yaml",
+					// 	//"klusterlet_addon_config_cr.yaml",
+					// },
+					nil,
+					false,
+					values)).To(BeNil())
 			})
+			time.Sleep(10 * time.Second)
 
 			var importSecret *corev1.Secret
 			When("the managedcluster is created, wait for import secret", func() {
@@ -137,22 +152,32 @@ var _ = Describe("Import cluster", func() {
 				Expect(managedClusterApplier.CreateOrUpdateAssets(importSecret.Data["import.yaml"], nil, "---")).NotTo(HaveOccurred())
 			})
 
+			time.Sleep(1 * time.Minute)
+
 			When(fmt.Sprintf("Import launched, wait for cluster %s to be ready", clusterName), func() {
 				waitClusterImported(hubClientDynamic, clusterName)
 			})
 
+			time.Sleep(3 * time.Minute)
 			When(fmt.Sprintf("Cluster %s ready, wait manifestWorks to be applied", clusterName), func() {
 				checkManifestWorksApplied(hubClientDynamic, clusterName)
 			})
 
-			klog.V(1).Infof("Cluster %s: Wait 10 min to settle", clusterName)
-			time.Sleep(10 * time.Minute)
+			klog.V(1).Infof("Cluster %s: Wait 3 min to settle", clusterName)
+			time.Sleep(3 * time.Minute)
+
+			When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
+				waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+			})
 
 			By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
 				klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
 				gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
 				Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
 			})
+
+			klog.V(1).Infof("Cluster %s: Wait 6 min for cluster to go in Unknown state", clusterName)
+			time.Sleep(6 * time.Minute)
 
 			When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
 				waitDetached(hubClientDynamic, clusterName)
