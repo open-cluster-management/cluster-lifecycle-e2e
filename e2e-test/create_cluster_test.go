@@ -174,6 +174,12 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
+			if libgooptions.TestOptions.OCPReleaseVersion == "" {
+				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
+				imagesets, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+				Expect(err).To(BeNil())
+				fmt.Println("imagesets: ", imagesets)
+			}
 			if libgooptions.TestOptions.OCPReleaseVersion != "" {
 				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPReleaseVersion)
 				Expect(err).To(BeNil())

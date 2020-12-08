@@ -6,7 +6,6 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -73,23 +72,25 @@ var _ = Describe("Check local-cluster imported", func() {
 			klog.V(1).Infof("Cluster %s: ManagedCluster resourec %s is present", clusterName, clusterName)
 		})
 
-		When(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
-			waitClusterImported(hubClientDynamic, clusterName)
-		})
+		//if libgooptions.TestOptions.OCPReleaseVersion == "" {
+		gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
+		_, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+		Expect(err).To(BeNil())
+		//fmt.Println("imagesets: ", imagesets)
+		//}
 
-		When(fmt.Sprintf("Cluster %s ready, wait manifestWorks to be applied", clusterName), func() {
-			checkManifestWorksApplied(hubClientDynamic, clusterName)
-		})
+		// When(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
+		// 	waitClusterImported(hubClientDynamic, clusterName)
+		// })
 
-		When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
-			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
-		})
+		// When(fmt.Sprintf("Cluster %s ready, wait manifestWorks to be applied", clusterName), func() {
+		// 	checkManifestWorksApplied(hubClientDynamic, clusterName)
+		// })
 
-		// if !wasAlreadyImported {
-		// 	klog.V(1).Infof("Cluster %s: Wait 10 min to settle", clusterName)
-		// 	time.Sleep(10 * time.Minute)
-		// 	unimport(hubClientDynamic, clusterName)
-		// }
+		// When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
+		// 	waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+		// })
+
 	})
 
 })
