@@ -176,8 +176,8 @@ var _ = Describe("Import cluster", func() {
 				Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
 			})
 
-			klog.V(1).Infof("Cluster %s: Wait 6 min for cluster to go in Unknown state", clusterName)
-			time.Sleep(6 * time.Minute)
+			klog.V(1).Infof("Cluster %s: Wait 10 min for cluster to go in Unknown state", clusterName)
+			time.Sleep(10 * time.Minute)
 
 			When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
 				waitDetached(hubClientDynamic, clusterName)

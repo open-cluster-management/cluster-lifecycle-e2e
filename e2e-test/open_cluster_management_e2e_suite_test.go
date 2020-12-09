@@ -388,33 +388,32 @@ func waitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName
 	//gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
 	for _, addOnName := range managedClusteraddOns {
 		Eventually(func() error {
-			klog.V(1).Infof("Checking Add-On %s is available...", addOnName)
+			klog.V(1).Infof("Cluster %s: Checking Add-On %s is available...", clusterName, addOnName)
 			return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
 		}).Should(BeNil())
-		klog.V(1).Infof("Cluster %s: imported", clusterName)
+		klog.V(1).Infof("Cluster %s: all add-ons are available", clusterName)
 	}
 }
 
 func validateClusterAddOnAvailable(hubClientDynamic dynamic.Interface, clusterName string, addOnName string) error {
 
 	gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
-	klog.V(1).Infof("Checking Add-On %s is available...", addOnName)
 	managedClusterAddon, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), addOnName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
 
 	var condition map[string]interface{}
 	condition, err = libgounstructuredv1.GetConditionByType(managedClusterAddon, "Available")
 	if err != nil {
-		klog.V(4).Infof("Add-On %s: %s", addOnName, err)
+		klog.V(4).Infof("Cluster %s - Add-On %s: %s", clusterName, addOnName, err)
 		return err
 	}
 	klog.V(4).Info(condition)
 	if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
-		klog.V(1).Infof("Add-On %s is available...", addOnName)
+		klog.V(1).Infof("Cluster %s: Add-On %s is available...", clusterName, addOnName)
 		return nil
 	}
-	err = fmt.Errorf("Add-On %s: status not found or not true", addOnName)
-	klog.V(4).Infof("Add-On %s: %s", addOnName, err)
+	err = fmt.Errorf("Cluster %s - Add-On %s: status not found or not true", clusterName, addOnName)
+	klog.V(4).Infof("Cluster %s - Add-On %s: %s", clusterName, addOnName, err)
 	return err
 
 }

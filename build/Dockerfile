@@ -11,7 +11,6 @@ ENV COMPONENT_VERSION="${COMPONENT_VERSION}"
 
 
 ENV GOPATH /go
-# ENV CGO_ENABLED=0
 
 ENV PATH usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin:/go/bin:.
 
@@ -46,10 +45,6 @@ ENV GINKGO_SKIP=""
 # run as root
 USER root
 
-# ENV E2E_BIN=/usr/local/bin/e2e-test.test \
-#     USER_UID=root \
-#     USER_NAME=cluster-lifecycle
-
 # install ginkgo into built image
 COPY --from=builder /go/bin/ /usr/local/bin
 
@@ -57,15 +52,9 @@ COPY --from=builder /go/bin/ /usr/local/bin
 COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/resources /test/resources
 
 # install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test /test/resources
-#COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
-
+COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test /test
 
 VOLUME /results
-#WORKDIR "/test/resources"
-# execute compiled ginkgo tests
-#ENTRYPOINT ["/usr/local/bin/entrypoint-e2e"]
+WORKDIR "/test"
 
-CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --tags=e2e --skip=${GINKGO_SKIP} --p --reportFile=${REPORT_FILE} /test/resources/e2e-test.test -- -v=3"]
-#USER ${USER_UID}
-#ginkgo -p -tags e2e e2e-test -- -v=5
+CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --skip=${GINKGO_SKIP} --p --stream --reportFile=${REPORT_FILE} e2e-test.test -- -v=3"]

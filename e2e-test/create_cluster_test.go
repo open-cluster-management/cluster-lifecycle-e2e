@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -174,20 +175,31 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
-			if libgooptions.TestOptions.OCPReleaseVersion == "" {
-				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
-				imagesets, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
-				Expect(err).To(BeNil())
-				fmt.Println("imagesets: ", imagesets)
-			}
 			if libgooptions.TestOptions.OCPReleaseVersion != "" {
 				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPReleaseVersion)
 				Expect(err).To(BeNil())
+			} else {
+				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
+				imagesetsList, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+				Expect(err).To(BeNil())
+				var imageSets []string
+
+				for _, imageset := range imagesetsList.Items {
+					if metadata, ok := imageset.Object["metadata"]; ok {
+						if m, ok := metadata.(map[string]interface{}); ok {
+							if name, ok := m["name"]; ok {
+								strName := fmt.Sprintf("%v", name)
+								imageSets = append(imageSets, strName)
+							}
+						}
+					}
+				}
+
+				sort.Strings(imageSets)
+				if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
+					imageRefName = imageSets[len(imageSets)-1]
+				}
 			}
-			// if imageRefName == "" {
-			// 	imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPImageRelease)
-			// 	Expect(err).To(BeNil())
-			// }
 		})
 
 		By("creating the clusterDeployment", func() {
@@ -218,8 +230,8 @@ with image %s ===============================`, clusterName, imageRefName)
 		})
 
 		By("Attaching the cluster by creating the managedCluster and klusterletaddonconfig", func() {
-			// createKlusterletAddonConfig(hubCreateApplier, clusterName, cloud, vendor)
 			createManagedCluster(hubCreateApplier, clusterName, cloud, vendor)
+			createKlusterletAddonConfig(hubCreateApplier, clusterName, cloud, vendor)
 		})
 
 		When("Import launched, wait for cluster to be installed", func() {
@@ -250,9 +262,12 @@ with image %s ===============================`, clusterName, imageRefName)
 			validateClusterImported(hubClientDynamic, hubClient, clusterName)
 		})
 
-		// When("Cluster Addons, validate...", func() {
-		// 	validateClusterAdddonsAvailable(hubClientDynamic, hubClient, clusterName)
-		// })
+		klog.V(1).Infof("Cluster %s: Wait 3 min to settle", clusterName)
+		time.Sleep(3 * time.Minute)
+
+		When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
+			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+		})
 
 		By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
 			klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
@@ -467,7 +482,7 @@ func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameOb
 }
 
 func createManagedCluster(hubCreateApplier *libgoapplier.Applier, clusterName, cloud, vendor string) {
-	By("creating the managedCluster", func() {
+	By("creating the managedCluster and klusterletaddonconfig", func() {
 		values := struct {
 			ManagedClusterName   string
 			ManagedClusterCloud  string

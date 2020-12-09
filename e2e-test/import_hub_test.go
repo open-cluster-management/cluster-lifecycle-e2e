@@ -72,13 +72,6 @@ var _ = Describe("Check local-cluster imported", func() {
 			klog.V(1).Infof("Cluster %s: ManagedCluster resourec %s is present", clusterName, clusterName)
 		})
 
-		//if libgooptions.TestOptions.OCPReleaseVersion == "" {
-		gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
-		_, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
-		Expect(err).To(BeNil())
-		//fmt.Println("imagesets: ", imagesets)
-		//}
-
 		// When(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
 		// 	waitClusterImported(hubClientDynamic, clusterName)
 		// })
