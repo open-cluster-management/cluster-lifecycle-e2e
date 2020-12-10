@@ -33,15 +33,15 @@ import (
 	"k8s.io/klog"
 )
 
-var _ = Describe("Create AWS OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create AWS OpenShift cluster", func() {
 	createCluster("aws", "OpenShift")
 })
 
-var _ = Describe("Create Azure OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create Azure OpenShift cluster", func() {
 	createCluster("azure", "OpenShift")
 })
 
-var _ = Describe("Create GCP OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create GCP OpenShift cluster", func() {
 	createCluster("gcp", "OpenShift")
 })
 

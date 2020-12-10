@@ -29,7 +29,7 @@ import (
 	"k8s.io/klog"
 )
 
-var _ = Describe("Import cluster", func() {
+var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluster", func() {
 
 	var err error
 	//var managedClustersForManualImport map[string]string

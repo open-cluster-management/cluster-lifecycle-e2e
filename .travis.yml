@@ -49,18 +49,16 @@ jobs:
     #   - make component/build-e2e
     #   - make component/push-e2e
     
-    # - stage: release-ff
-    #   name: "Push commits to current release branch"
-    #   if: type = push AND branch =~ /^master$/
-    #   script:
-    #     - make
-    #     - make release-ff
+    - stage: release-ff
+      name: "Push commits to current release branch"
+      if: type = push AND branch =~ /^main$/
+      script:
+        - make
+        - make release-ff
 
-    # - stage: publish
-    #   name: "Publish Image"
-    #   if: type = push AND branch =~ /^release-[0-9]+\..*$/
-    #   script:
-    #     - make jq/install 
-    #     - make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
-    #   after_script:
-    #     - test "$TRAVIS_PULL_REQUEST" = "false" && test "$TRAVIS_TEST_RESULT" = "1" && ./build/slack-notification.sh || echo "Slack notification not sent"
+    - stage: publish
+      name: "Publish Image"
+      if: type = push AND branch =~ /^release-[0-9]+\..*$/
+      script:
+        - make jq/install 
+        - make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}

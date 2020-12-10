@@ -387,11 +387,13 @@ func validateClusterDetached(hubClientDynamic dynamic.Interface, hubClient kuber
 func waitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName string) {
 	//gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
 	for _, addOnName := range managedClusteraddOns {
-		Eventually(func() error {
-			klog.V(1).Infof("Cluster %s: Checking Add-On %s is available...", clusterName, addOnName)
-			return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
-		}).Should(BeNil())
-		klog.V(1).Infof("Cluster %s: all add-ons are available", clusterName)
+		if !(clusterName == "local-cluster" && addOnName == "search-collector") {
+			Eventually(func() error {
+				klog.V(1).Infof("Cluster %s: Checking Add-On %s is available...", clusterName, addOnName)
+				return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
+			}).Should(BeNil())
+			klog.V(1).Infof("Cluster %s: all add-ons are available", clusterName)
+		}
 	}
 }
 

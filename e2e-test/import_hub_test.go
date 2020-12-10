@@ -6,6 +6,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -19,7 +20,7 @@ import (
 	"k8s.io/klog"
 )
 
-var _ = Describe("Check local-cluster imported", func() {
+var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Check local-cluster imported", func() {
 
 	BeforeEach(func() {
 		SetDefaultEventuallyTimeout(15 * time.Minute)
@@ -57,8 +58,6 @@ var _ = Describe("Check local-cluster imported", func() {
 		}).Should(BeNil())
 
 		By("Checking namespace local-cluster is present in which the cluster is imported", func() {
-			//Create the cluster NS on master
-
 			namespaces := hubClient.CoreV1().Namespaces()
 			_, err := namespaces.Get(context.TODO(), clusterName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
@@ -72,17 +71,17 @@ var _ = Describe("Check local-cluster imported", func() {
 			klog.V(1).Infof("Cluster %s: ManagedCluster resourec %s is present", clusterName, clusterName)
 		})
 
-		// When(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
-		// 	waitClusterImported(hubClientDynamic, clusterName)
-		// })
+		When(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
+			waitClusterImported(hubClientDynamic, clusterName)
+		})
 
-		// When(fmt.Sprintf("Cluster %s ready, wait manifestWorks to be applied", clusterName), func() {
-		// 	checkManifestWorksApplied(hubClientDynamic, clusterName)
-		// })
+		When(fmt.Sprintf("Cluster %s ready, wait manifestWorks to be applied", clusterName), func() {
+			checkManifestWorksApplied(hubClientDynamic, clusterName)
+		})
 
-		// When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
-		// 	waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
-		// })
+		When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
+			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+		})
 
 	})
 
