@@ -9,14 +9,10 @@ ENV USE_VENDORIZED_BUILD_HARNESS=true
 ENV COMPONENT_NAME=cluster-lifecycle-e2e
 ENV COMPONENT_VERSION="${COMPONENT_VERSION}"
 
-# Install ChromeDriver in build image
-# ENV CHROMEDRIVER_VERSION "80.0.3987.16"
-# RUN mkdir -p $REMOTE_SOURCE_DIR/chromedriver
-# ENV CHROMEDRIVER_VERSION "81.0.4044.69"
-# RUN wget --no-check-certificate -N https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip -P $REMOTE_SOURCE_DIR/chromedriver
 
-# RUN mkdir -p $REMOTE_SOURCE_DIR/app/build/bin
-# RUN unzip $REMOTE_SOURCE_DIR/chromedriver/chromedriver_linux64.zip -d $REMOTE_SOURCE_DIR/app/build/bin
+ENV GOPATH /go
+
+ENV PATH usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin:/go/bin:.
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
@@ -39,29 +35,30 @@ RUN microdnf update
 # expose env vars for runtime
 ENV KUBECONFIG "/opt/.kube/config"
 ENV OPTIONS "/resources/options.yaml"
-ENV REPORT_FILE "/results/results.xml"
+ENV REPORT_FILE "/results/results"
 ENV GINKGO_DEFAULT_FLAGS "-slowSpecThreshold=120 -timeout 7200s"
-ENV GINKGO_NODES "1"
+ENV GINKGO_NODES "11"
 ENV GINKGO_FLAGS=""
 ENV GINKGO_FOCUS=""
 ENV GINKGO_SKIP=""
 
-ENV E2E_BIN=/usr/local/bin/e2e-test.test \
-    USER_UID=1001 \
-    USER_NAME=cluster-lifecycle
+# run as root
+USER root
 
-# install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test ${E2E_BIN}
-COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
+# install ginkgo into built image
+COPY --from=builder /go/bin/ /usr/local/bin
 
 # Copy resources which contains the options.yaml
 COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/resources /test/resources
 
-RUN  /usr/local/bin/user_setup
-
+# install operator binary
+COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test /test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh 
 VOLUME /results
+WORKDIR "/test"
 
-# execute compiled ginkgo tests
-ENTRYPOINT ["/usr/local/bin/entrypoint-e2e"]
+#CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --skip=${GINKGO_SKIP} --p --trace --debug e2e-test.test -- -v=3"]
 
-USER ${USER_UID}
+RUN ["chmod", "+x", "start-tests.sh"]
+
+ENTRYPOINT ["./start-tests.sh"]

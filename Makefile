@@ -66,16 +66,16 @@ endif
 ## Download all project dependencies
 deps: init component/init
 
-.PHONY: build
-build:
-	make docker/info
-	make docker/build
+# .PHONY: build
+# build:
+# 	make docker/info
+# 	make docker/build
 
 .PHONY: push
 push:: docker/tag docker/login
 	make docker/push
 
-.PHONY: build-e2e
-build-e2e:
-	$(SELF) component/build-e2e
+.PHONY: build
+build:
+	make component/build
 	

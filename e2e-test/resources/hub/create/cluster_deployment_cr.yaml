@@ -12,6 +12,7 @@ spec:
   clusterName: {{ .ManagedClusterName }}
   controlPlaneConfig:
     servingCertificates: {}
+  installAttemptsLimit: 2
   installed: false
   platform:
 {{if (eq .ManagedClusterCloud "aws") }}
