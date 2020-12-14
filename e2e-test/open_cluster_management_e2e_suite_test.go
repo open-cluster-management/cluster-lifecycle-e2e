@@ -59,6 +59,7 @@ var managedClusteraddOns = []string{
 
 var cloudProviders string
 var ocpImageRelease string
+var reportFile string
 var kubeconfig string
 var baseDomain string
 var kubeadminUser string
@@ -76,11 +77,14 @@ func init() {
 	flag.StringVar(&ocpImageRelease, "ocp-image-release", "",
 		"If set this image will be use to create an imageSet reference instead of the one in options.yaml")
 
+	//flag.StringVar(&reportFile, "report-file", "/results/result", "Provide the path to where the junit results will be printed.")
+
 }
 
 func TestOpenClusterManagementE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", libgocmd.End2End.ReportFile, config.GinkgoConfig.ParallelNode))
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result", config.GinkgoConfig.ParallelNode))
+	//junitReporter := reporters.NewJUnitReporter(libgocmd.End2End.ReportFile)
 	RunSpecsWithDefaultAndCustomReporters(t, "OpenClusterManagementE2E Suite", []Reporter{junitReporter})
 }
 
@@ -302,7 +306,7 @@ func validateClusterImported(hubClientDynamic dynamic.Interface, hubClient kuber
 		*config,
 		&clientcmd.ConfigOverrides{}).ClientConfig()
 	Expect(err).To(BeNil())
-	By("Checking if \"open-cluster-management-agent\" namespace on managed cluster exits", func() {
+	By("Checking if \"open-cluster-management-agent\" namespace on managed cluster exists", func() {
 		clientset, err := kubernetes.NewForConfig(rconfig)
 		Expect(err).To(BeNil())
 		_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), "open-cluster-management-agent", metav1.GetOptions{})

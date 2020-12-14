@@ -35,9 +35,9 @@ RUN microdnf update
 # expose env vars for runtime
 ENV KUBECONFIG "/opt/.kube/config"
 ENV OPTIONS "/resources/options.yaml"
-ENV REPORT_FILE "/results/results.xml"
+ENV REPORT_FILE "/results/results"
 ENV GINKGO_DEFAULT_FLAGS "-slowSpecThreshold=120 -timeout 7200s"
-ENV GINKGO_NODES "1"
+ENV GINKGO_NODES "11"
 ENV GINKGO_FLAGS=""
 ENV GINKGO_FOCUS=""
 ENV GINKGO_SKIP=""
@@ -53,8 +53,12 @@ COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/resources /test/resources
 
 # install operator binary
 COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test /test
-
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh 
 VOLUME /results
 WORKDIR "/test"
 
-CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --skip=${GINKGO_SKIP} --p --stream --reportFile=${REPORT_FILE} e2e-test.test -- -v=3"]
+#CMD ["/bin/bash", "-c", "ginkgo --v --focus=${GINKGO_FOCUS} --skip=${GINKGO_SKIP} --p --trace --debug e2e-test.test -- -v=3"]
+
+RUN ["chmod", "+x", "start-tests.sh"]
+
+ENTRYPOINT ["./start-tests.sh"]

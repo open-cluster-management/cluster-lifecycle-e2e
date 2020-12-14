@@ -33,15 +33,15 @@ import (
 	"k8s.io/klog"
 )
 
-var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create AWS OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: ", func() {
 	createCluster("aws", "OpenShift")
 })
 
-var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create Azure OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: ", func() {
 	createCluster("azure", "OpenShift")
 })
 
-var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Create GCP OpenShift cluster", func() {
+var _ = Describe("Cluster-lifecycle: ", func() {
 	createCluster("gcp", "OpenShift")
 })
 
@@ -68,7 +68,7 @@ with image %s ===============================`, clusterName, imageRefName)
 
 	})
 
-	It(fmt.Sprintf("Create cluster %s on %s with vendor %s (cluster/g1/create-cluster)", clusterName, cloud, vendor), func() {
+	It(fmt.Sprintf("[P1][Sev1][cluster-lifecycle] Create and destroy cluster %s on %s with vendor %s (cluster/g1/create-cluster)", clusterName, cloud, vendor), func() {
 		By("Checking the minimal requirements", func() {
 			klog.V(1).Infof("Cluster %s: Checking the minimal requirements", clusterName)
 			Eventually(func() bool {
