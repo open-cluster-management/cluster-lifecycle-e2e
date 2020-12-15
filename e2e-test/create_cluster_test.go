@@ -153,7 +153,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterName:          clusterName,
 				ManagedClusterCloud:         cloud,
 				ManagedClusterVendor:        vendor,
-				ManagedClusterSSHPrivateKey: libgooptions.TestOptions.CloudConnection.SSHPrivateKey,
+				ManagedClusterSSHPrivateKey: libgooptions.TestOptions.Options.CloudConnection.SSHPrivateKey,
 				ManagedClusterPullSecret:    string(pullSecret.Data[".dockerconfigjson"]),
 			}
 			Expect(hubCreateApplier.CreateOrUpdateInPath(".",
@@ -175,8 +175,8 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
-			if libgooptions.TestOptions.OCPReleaseVersion != "" {
-				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.OCPReleaseVersion)
+			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" {
+				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
 				Expect(err).To(BeNil())
 			} else {
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
@@ -223,7 +223,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterBaseDomain: baseDomain,
 				//TODO: parametrize the image
 				ManagedClusterImageRefName:  imageRefName,
-				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.BaseDomainRGN,
+				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.BaseDomainRGN,
 			}
 			klog.V(1).Infof("Cluster %s: Creating the clusterDeployment", clusterName)
 			Expect(hubCreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
@@ -334,8 +334,8 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			AWSSecretAccessKey string
 		}{
 			ManagedClusterName: clusterName,
-			AWSAccessKeyID:     libgooptions.TestOptions.CloudConnection.APIKeys.AWS.AWSAccessKeyID,
-			AWSSecretAccessKey: libgooptions.TestOptions.CloudConnection.APIKeys.AWS.AWSAccessSecret,
+			AWSAccessKeyID:     libgooptions.TestOptions.Options.CloudConnection.APIKeys.AWS.AWSAccessKeyID,
+			AWSSecretAccessKey: libgooptions.TestOptions.Options.CloudConnection.APIKeys.AWS.AWSAccessSecret,
 		}
 		return hubCreateApplier.CreateOrUpdateResource(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	case "azure":
@@ -347,10 +347,10 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			ManagedClusterSubscriptionId string
 		}{
 			ManagedClusterName:           clusterName,
-			ManagedClusterClientId:       libgooptions.TestOptions.CloudConnection.APIKeys.Azure.ClientID,
-			ManagedClusterClientSecret:   libgooptions.TestOptions.CloudConnection.APIKeys.Azure.ClientSecret,
-			ManagedClusterTenantId:       libgooptions.TestOptions.CloudConnection.APIKeys.Azure.TenantID,
-			ManagedClusterSubscriptionId: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.SubscriptionID,
+			ManagedClusterClientId:       libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.ClientID,
+			ManagedClusterClientSecret:   libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.ClientSecret,
+			ManagedClusterTenantId:       libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.TenantID,
+			ManagedClusterSubscriptionId: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.SubscriptionID,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	case "gcp":
@@ -359,7 +359,7 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			GCPOSServiceAccountJson string
 		}{
 			ManagedClusterName:      clusterName,
-			GCPOSServiceAccountJson: libgooptions.TestOptions.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
+			GCPOSServiceAccountJson: libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 
@@ -392,7 +392,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterName:         clusterName,
 			ManagedClusterBaseDomain:   baseDomain,
 			ManagedClusterRegion:       region,
-			ManagedClusterSSHPublicKey: libgooptions.TestOptions.CloudConnection.SSHPublicKey,
+			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "azure":
@@ -405,9 +405,9 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		}{
 			ManagedClusterName:          clusterName,
 			ManagedClusterBaseDomain:    baseDomain,
-			ManagedClusterBaseDomainRGN: libgooptions.TestOptions.CloudConnection.APIKeys.Azure.BaseDomainRGN,
+			ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.BaseDomainRGN,
 			ManagedClusterRegion:        region,
-			ManagedClusterSSHPublicKey:  libgooptions.TestOptions.CloudConnection.SSHPublicKey,
+			ManagedClusterSSHPublicKey:  libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "gcp":
@@ -420,9 +420,9 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		}{
 			ManagedClusterName:         clusterName,
 			ManagedClusterBaseDomain:   baseDomain,
-			ManagedClusterProjectID:    libgooptions.TestOptions.CloudConnection.APIKeys.GCP.ProjectID,
+			ManagedClusterProjectID:    libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ProjectID,
 			ManagedClusterRegion:       region,
-			ManagedClusterSSHPublicKey: libgooptions.TestOptions.CloudConnection.SSHPublicKey,
+			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:
