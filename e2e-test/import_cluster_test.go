@@ -47,7 +47,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 
 	It("Given a list of clusters to import (cluster/g0/import-service-resources)", func() {
 		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
-		for _, managedCluster := range libgooptions.TestOptions.ManagedClusters {
+		for _, managedCluster := range libgooptions.TestOptions.Options.ManagedClusters {
 			var clusterName = managedCluster.Name
 			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", managedCluster.Name)
 			managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})

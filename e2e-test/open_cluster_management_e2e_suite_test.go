@@ -102,13 +102,13 @@ var _ = BeforeSuite(func() {
 	var err error
 	Expect(initVars()).To(BeNil())
 	//kubeconfig := libgooptions.GetHubKubeConfig(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, "kube"), libgooptions.TestOptions.Hub.KubeConfigPath)
-	hubClient, err = libgoclient.NewKubeClient(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
+	hubClient, err = libgoclient.NewKubeClient(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientDynamic, err = libgoclient.NewKubeClientDynamic(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
+	hubClientDynamic, err = libgoclient.NewKubeClientDynamic(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientAPIExtension, err = libgoclient.NewKubeClientAPIExtension(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext)
+	hubClientAPIExtension, err = libgoclient.NewKubeClientAPIExtension(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
-	hubClientClient, err = libgoclient.NewClient(libgooptions.TestOptions.Hub.MasterURL, libgooptions.TestOptions.Hub.KubeConfig, libgooptions.TestOptions.Hub.KubeContext, client.Options{})
+	hubClientClient, err = libgoclient.NewClient(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext, client.Options{})
 	Expect(err).To(BeNil())
 	createYamlReader := templateprocessor.NewYamlFileReader(filepath.Join("resources/hub", createClusterScenario))
 	createTemplateProcessor, err = templateprocessor.NewTemplateProcessor(createYamlReader, &templateprocessor.Options{})
@@ -136,39 +136,39 @@ func initVars() error {
 	fmt.Println("testoptions: ", libgooptions.TestOptions)
 	//Expect(err).NotTo(HaveOccurred())
 
-	if libgooptions.TestOptions.Hub.KubeConfig == "" {
+	if libgooptions.TestOptions.Options.Hub.KubeConfig == "" {
 		if kubeconfig == "" {
 			kubeconfig = os.Getenv("KUBECONFIG")
 		}
-		libgooptions.TestOptions.Hub.KubeConfig = kubeconfig
+		libgooptions.TestOptions.Options.Hub.KubeConfig = kubeconfig
 	}
 
-	if libgooptions.TestOptions.Hub.BaseDomain != "" {
-		baseDomain = libgooptions.TestOptions.Hub.BaseDomain
+	if libgooptions.TestOptions.Options.Hub.BaseDomain != "" {
+		baseDomain = libgooptions.TestOptions.Options.Hub.BaseDomain
 
-		if libgooptions.TestOptions.Hub.MasterURL == "" {
-			libgooptions.TestOptions.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Hub.Name, libgooptions.TestOptions.Hub.BaseDomain)
+		if libgooptions.TestOptions.Options.Hub.MasterURL == "" {
+			libgooptions.TestOptions.Options.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Options.Hub.Name, libgooptions.TestOptions.Options.Hub.BaseDomain)
 		}
 	} else {
 		Expect(baseDomain).NotTo(BeEmpty(), "The `baseDomain` is required.")
-		libgooptions.TestOptions.Hub.BaseDomain = baseDomain
-		libgooptions.TestOptions.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Hub.Name, baseDomain)
+		libgooptions.TestOptions.Options.Hub.BaseDomain = baseDomain
+		libgooptions.TestOptions.Options.Hub.MasterURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Options.Hub.Name, baseDomain)
 	}
 
-	if libgooptions.TestOptions.Hub.User != "" {
-		kubeadminUser = libgooptions.TestOptions.Hub.User
+	if libgooptions.TestOptions.Options.Hub.User != "" {
+		kubeadminUser = libgooptions.TestOptions.Options.Hub.User
 	}
-	if libgooptions.TestOptions.Hub.Password != "" {
-		kubeadminCredential = libgooptions.TestOptions.Hub.Password
+	if libgooptions.TestOptions.Options.Hub.Password != "" {
+		kubeadminCredential = libgooptions.TestOptions.Options.Hub.Password
 	}
 
-	if libgooptions.TestOptions.ManagedClusters != nil && len(libgooptions.TestOptions.ManagedClusters) > 0 {
-		for i, mc := range libgooptions.TestOptions.ManagedClusters {
+	if libgooptions.TestOptions.Options.ManagedClusters != nil && len(libgooptions.TestOptions.Options.ManagedClusters) > 0 {
+		for i, mc := range libgooptions.TestOptions.Options.ManagedClusters {
 			if mc.MasterURL == "" {
-				libgooptions.TestOptions.ManagedClusters[i].MasterURL = fmt.Sprintf("https://api.%s:6443", mc.BaseDomain)
+				libgooptions.TestOptions.Options.ManagedClusters[i].MasterURL = fmt.Sprintf("https://api.%s:6443", mc.BaseDomain)
 			}
 			if mc.KubeConfig == "" {
-				libgooptions.TestOptions.ManagedClusters[i].KubeConfig = os.Getenv("IMPORT_KUBECONFIG")
+				libgooptions.TestOptions.Options.ManagedClusters[i].KubeConfig = os.Getenv("IMPORT_KUBECONFIG")
 			}
 		}
 	}
