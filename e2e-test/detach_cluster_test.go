@@ -53,10 +53,14 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			// Expect(err).To(BeNil())
 			// managedClusterApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
 			// Expect(err).To(BeNil())
-			managedClusterKubeClient, err = libgoclient.NewKubeClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
+			// managedClusterKubeClient, err = libgoclient.NewKubeClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
+			// Expect(err).To(BeNil())
+			managedClusterKubeClient, err = libgoclient.NewDefaultKubeClient(managedCluster.KubeConfig)
 			Expect(err).To(BeNil())
-			managedClusterDynamicClient, err = libgoclient.NewKubeClientDynamic(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
+			managedClusterDynamicClient, err = libgoclient.NewDefaultKubeClientDynamic(managedCluster.KubeConfig)
 			Expect(err).To(BeNil())
+			// managedClusterDynamicClient, err = libgoclient.NewKubeClientDynamic(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
+			// Expect(err).To(BeNil())
 			Eventually(func() bool {
 				klog.V(1).Infof("Cluster %s: Check CRDs", clusterName)
 				has, _, _ := libgocrdv1.HasCRDs(hubClientAPIExtension,
