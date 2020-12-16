@@ -36,7 +36,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 	var managedClusterApplier *libgoapplier.Applier
 
 	// BeforeEach(func() {
-	// 	managedClustersForManualImport, err = libgooptions.GetManagedClusterKubeConfigs(libgooptions.TestOptions.ManagedClusters.ConfigDir, importClusterScenario)
+	// 	managedClustersForManualImport, err = libgooptions.GetManagedClusterKubeConfigs("/resources", importClusterScenario)
 	// 	Expect(err).To(BeNil())
 	// 	if len(managedClustersForManualImport) == 0 {
 	// 		Skip("Manual import not executed because no managed cluster defined for import")
@@ -49,8 +49,10 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
 		for _, managedCluster := range libgooptions.TestOptions.Options.ManagedClusters {
 			var clusterName = managedCluster.Name
-			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", managedCluster.Name)
-			managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})
+			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", clusterName)
+			// managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})
+			// Expect(err).To(BeNil())
+			managedClusterClient, err = libgoclient.NewDefaultClient(managedCluster.KubeConfig, client.Options{})
 			Expect(err).To(BeNil())
 			managedClusterApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
 			Expect(err).To(BeNil())
