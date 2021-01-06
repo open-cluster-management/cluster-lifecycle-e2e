@@ -11,6 +11,7 @@ require (
 	github.com/open-cluster-management/library-e2e-go v0.0.0-20201215212524-78a2239e545c
 	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
+	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0
 	k8s.io/api v0.19.0
 	k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery v0.19.0
