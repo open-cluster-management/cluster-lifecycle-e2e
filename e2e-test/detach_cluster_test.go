@@ -95,8 +95,8 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 				Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
 			})
 
-			klog.V(1).Infof("Cluster %s: Wait 10 min for cluster to go in Unknown state", clusterName)
-			time.Sleep(10 * time.Minute)
+			klog.V(1).Infof("Cluster %s: Wait 20 min for cluster to go in Unknown state", clusterName)
+			time.Sleep(20 * time.Minute)
 
 			When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
 				waitDetached(hubClientDynamic, clusterName)
