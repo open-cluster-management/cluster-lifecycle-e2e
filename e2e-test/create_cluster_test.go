@@ -44,6 +44,9 @@ var _ = Describe("Cluster-lifecycle: ", func() {
 var _ = Describe("Cluster-lifecycle: ", func() {
 	createCluster("gcp", "OpenShift")
 })
+var _ = Describe("Cluster-lifecycle: ", func() {
+	createCluster("baremetal", "OpenShift")
+})
 
 func createCluster(cloud, vendor string) {
 	var clusterNameObj *libgooptions.ClusterName
