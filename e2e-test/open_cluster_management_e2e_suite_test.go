@@ -136,7 +136,6 @@ func initVars() error {
 	}
 
 	o, _ := yaml.Marshal(libgooptions.TestOptions)
-	fmt.Println("testoptions:\n", string(o))
 	//Expect(err).NotTo(HaveOccurred())
 
 	if libgooptions.TestOptions.Options.Hub.KubeConfig == "" {
