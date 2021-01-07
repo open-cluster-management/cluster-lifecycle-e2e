@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gopkg.in/yaml.v1"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,8 +134,6 @@ func initVars() error {
 		return err
 	}
 
-	o, _ := yaml.Marshal(libgooptions.TestOptions)
-	fmt.Println("testoptions:\n", string(o))
 	//Expect(err).NotTo(HaveOccurred())
 
 	if libgooptions.TestOptions.Options.Hub.KubeConfig == "" {
