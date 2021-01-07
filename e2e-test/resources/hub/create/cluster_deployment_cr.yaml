@@ -25,6 +25,11 @@ spec:
 {{if (eq .ManagedClusterCloud "gcp") }}
     gcp:
 {{ end }}
+{{if (eq .ManagedClusterCloud "baremetal") }}
+    baremetal:
+      libvirtSSHPrivateKeySecretRef:
+        name: {{ .ManagedClusterName }}-ssh-private-key
+{{ end }}
       credentialsSecretRef:
         name: {{ .ManagedClusterName }}-creds
       region: {{ .ManagedClusterRegion }}
@@ -36,5 +41,8 @@ spec:
     imageSetRef:
        #quay.io/openshift-release-dev/ocp-release:4.3.28-x86_64
       name: {{ .ManagedClusterImageRefName }}
+{{if (eq .ManagedClusterCloud "baremetal") }}
+    sshKnownHosts: {{ .SSHKnownHosts }}
+{{ end }}
   pullSecretRef:
     name: {{ .ManagedClusterName }}-pull-secret

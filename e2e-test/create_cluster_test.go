@@ -218,6 +218,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterBaseDomain    string
 				ManagedClusterImageRefName  string
 				ManagedClusterBaseDomainRGN string
+				SSHKnownHosts                []string
 			}{
 				ManagedClusterName:       clusterName,
 				ManagedClusterCloud:      cloud,
@@ -227,6 +228,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				//TODO: parametrize the image
 				ManagedClusterImageRefName:  imageRefName,
 				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.BaseDomainRGN,
+				SSHKnownHosts                libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.SSHKnownHostsList,
 			}
 			klog.V(1).Infof("Cluster %s: Creating the clusterDeployment", clusterName)
 			Expect(hubCreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
@@ -329,9 +331,10 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			GCPOSServiceAccountJson: libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
-
-	default:
-		return fmt.Errorf("Unsupporter cloud %s", cloud)
+		// case "baremetal":
+		// 	return
+		// default:
+		// 	return fmt.Errorf("Unsupporter cloud %s", cloud)
 	}
 }
 
@@ -390,6 +393,23 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterProjectID:    libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ProjectID,
 			ManagedClusterRegion:       region,
 			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
+		}
+		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
+	case "baremetal":
+		installConfigValues := struct {
+			ManagedClusterName         string
+			ManagedClusterBaseDomain   string
+			ManagedClusterProjectID    string
+			ManagedClusterRegion       string
+			ManagedClusterSSHPublicKey string
+		}{
+			ManagedClusterName:             clusterName,
+			ManagedClusterBaseDomain:       baseDomain,
+			ManagedClusterLibvirtURI:       libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.LibvirtURI,
+			ManagedClusterBootstrapOSImage: libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.BootstrapOSImage,
+			ManagedClusterClusterOSImage:   libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterOSImage,
+			ManagedClusterSSHPublicKey:     libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
+			ManagedClusterTrustBundle:      libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.TrustBundle,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:
