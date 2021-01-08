@@ -218,7 +218,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterBaseDomain    string
 				ManagedClusterImageRefName  string
 				ManagedClusterBaseDomainRGN string
-				SSHKnownHosts                []string
+				SSHKnownHosts               []string
 			}{
 				ManagedClusterName:       clusterName,
 				ManagedClusterCloud:      cloud,
@@ -228,7 +228,8 @@ with image %s ===============================`, clusterName, imageRefName)
 				//TODO: parametrize the image
 				ManagedClusterImageRefName:  imageRefName,
 				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.BaseDomainRGN,
-				SSHKnownHosts                libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.SSHKnownHostsList,
+				SSHKnownHosts:               libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.SSHKnownHostsList,
+				Hosts:                       libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.Hosts,
 			}
 			klog.V(1).Infof("Cluster %s: Creating the clusterDeployment", clusterName)
 			Expect(hubCreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
@@ -402,6 +403,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterProjectID    string
 			ManagedClusterRegion       string
 			ManagedClusterSSHPublicKey string
+			ManagedClusterTrustBundle  string
 		}{
 			ManagedClusterName:             clusterName,
 			ManagedClusterBaseDomain:       baseDomain,
@@ -410,6 +412,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterClusterOSImage:   libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterOSImage,
 			ManagedClusterSSHPublicKey:     libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 			ManagedClusterTrustBundle:      libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.TrustBundle,
+			Hosts:                          libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.Hosts,
 		}
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:

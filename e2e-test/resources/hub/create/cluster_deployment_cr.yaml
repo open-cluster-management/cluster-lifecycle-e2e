@@ -29,6 +29,7 @@ spec:
     baremetal:
       libvirtSSHPrivateKeySecretRef:
         name: {{ .ManagedClusterName }}-ssh-private-key
+      hosts: {{ .Hosts }}
 {{ end }}
       credentialsSecretRef:
         name: {{ .ManagedClusterName }}-creds

@@ -1,9 +1,9 @@
-options:
-  #Resource prefix, priority:
-  # 1. From command-line
-  # 2. From options.yaml
-  # 3. Using the $USER environment variable.
-  # 4. Default: ginkgo
+#Resource prefix, priority:
+# 1. From command-line
+# 2. From options.yaml
+# 3. Using the $USER environment variable.
+# 4. Default: ginkgo
+options: 
   owner: owner
   #hub information
   hub:
@@ -44,3 +44,34 @@ options:
         gcpProjectID: 
         baseDnsDomain: BASE_DNS_DOMAIN
         region: 
+      baremetal:
+        baseDnsDomain: BASE_DNS_DOMAIN
+        libvirtURI:
+        sshKnownHostsList:
+        imageRegistryMirror:
+        bootstrapOSImage:
+        clusterOSImage:
+        trustBundle:
+        hosts:
+        - name: f24-h27-000-r630-master-1-0
+          namespace: default
+          role: master
+          bmc:
+            address: 'ipmi://192.168.124.1:6235'
+            disableCertificateVerification: true
+            username: admin
+            password: password
+          bootMACAddress: 52:54:00:f4:52:9a
+          hardwareProfile: default
+        - name: f24-h27-000-r630-master-1-1
+          namespace: default
+          role: master
+          bmc:
+            address: 'ipmi://192.168.124.1:6236'
+            disableCertificateVerification: true
+            username: admin
+            password: password
+          bootMACAddress: 52:54:00:66:64:71
+          hardwareProfile: default
+
+
