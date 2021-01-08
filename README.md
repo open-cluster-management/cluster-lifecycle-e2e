@@ -61,22 +61,35 @@ $ kubectl config current-context
 open-cluster-management/api-demo-dev02-red-chesterfield-com:6443/kube:admin
 ```
 
-4. run `make build`. This will create a docker image:
+4. Set env variables `GITHUB_USER` and `GITHUB_TOKEN` and Run `make deps`. This will download necessary dependencies
+
+```
+$ make deps
+```
+
+5. Run `make build`. This will create a docker image:
 
 ```
 $ make build
 ```
 
-5. run the following command to get docker image ID, we will use this in the next step:
+6. run the following command to get docker image ID, we will use this in the next step:
 
 ```
 $ docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
 ```
 
-6. run testing:
+7. run testing:
+
+TEST_GROUP values can be 
+import - to import an existing cluster
+provision-all - to provision aws, gcp, azure clusters in parallel
+destroy - to deatch an existing imported cluster
+
+For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig` 
 
 ```
-$ docker run -v ~/.kube/:/opt/.kube -v $(pwd)/results:/results -v $(pwd)/e2e-test/resources:/resources $docker_image_id
+$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/e2e-test/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/e2e-test/resources:/resources -v $(pwd)/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
 ```
 
 In Canary environment, this is the container that will be run - and all the volumes etc will passed on while starting the docker container using a helper script.
