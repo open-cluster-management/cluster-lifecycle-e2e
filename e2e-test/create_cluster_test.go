@@ -170,8 +170,10 @@ with image %s ===============================`, clusterName, imageRefName)
 				false,
 				values)).To(BeNil())
 
-			klog.V(1).Infof("Cluster %s: Creating the %s cred secret", clusterName, cloud)
-			Expect(createCredentialsSecret(hubCreateApplier, clusterName, cloud)).To(BeNil())
+			if cloud != "baremetal" {
+				klog.V(1).Infof("Cluster %s: Creating the %s cred secret", clusterName, cloud)
+				Expect(createCredentialsSecret(hubCreateApplier, clusterName, cloud)).To(BeNil())
+			}
 
 			klog.V(1).Infof("Cluster %s: Creating install config secret", clusterName)
 			Expect(createInstallConfig(hubCreateApplier, createTemplateProcessor, clusterName, cloud)).To(BeNil())
@@ -206,8 +208,11 @@ with image %s ===============================`, clusterName, imageRefName)
 		})
 
 		By("creating the clusterDeployment", func() {
-			region, err := libgooptions.GetRegion(cloud)
-			Expect(err).To(BeNil())
+			var region string
+			if cloud != "baremetal" {
+				region, err = libgooptions.GetRegion(cloud)
+				Expect(err).To(BeNil())
+			}
 			baseDomain, err := libgooptions.GetBaseDomain(cloud)
 			Expect(err).To(BeNil())
 			values := struct {
@@ -219,6 +224,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterImageRefName  string
 				ManagedClusterBaseDomainRGN string
 				SSHKnownHosts               []string
+				Hosts                       []libgooptions.Hosts
 			}{
 				ManagedClusterName:       clusterName,
 				ManagedClusterCloud:      cloud,
@@ -332,10 +338,10 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			GCPOSServiceAccountJson: libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
 		}
 		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
-		// case "baremetal":
-		// 	return
-		// default:
-		// 	return fmt.Errorf("Unsupporter cloud %s", cloud)
+	// case "baremetal":
+	// 	return fmt.Println("baremetal")
+	default:
+		return fmt.Errorf("Unsupporter cloud %s", cloud)
 	}
 }
 
@@ -347,9 +353,13 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 	if err != nil {
 		return err
 	}
-	region, err := libgooptions.GetRegion(cloud)
-	if err != nil {
-		return err
+
+	var region string
+	if cloud != "baremetal" {
+		region, err = libgooptions.GetRegion(cloud)
+		if err != nil {
+			return err
+		}
 	}
 	var b []byte
 	switch cloud {
@@ -398,12 +408,14 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "baremetal":
 		installConfigValues := struct {
-			ManagedClusterName         string
-			ManagedClusterBaseDomain   string
-			ManagedClusterProjectID    string
-			ManagedClusterRegion       string
-			ManagedClusterSSHPublicKey string
-			ManagedClusterTrustBundle  string
+			ManagedClusterName             string
+			ManagedClusterBaseDomain       string
+			ManagedClusterLibvirtURI       string
+			ManagedClusterBootstrapOSImage string
+			ManagedClusterClusterOSImage   string
+			ManagedClusterSSHPublicKey     string
+			ManagedClusterTrustBundle      string
+			Hosts                          []libgooptions.Hosts
 		}{
 			ManagedClusterName:             clusterName,
 			ManagedClusterBaseDomain:       baseDomain,

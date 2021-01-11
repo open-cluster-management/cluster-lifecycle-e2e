@@ -32,7 +32,8 @@ platform:
       {{ .ManagedClusterBootstrapOSImage }}
     clusterOSImage: >-
       {{ .ManagedClusterClusterOSImage }}
-    hosts:
+    hosts: >-
+      {{ .Hosts }}
 pullSecret: "" # skip, hive will inject based on it's secrets
 sshKey: |-
 {{ .ManagedClusterSSHPublicKey | indent 4 }}
