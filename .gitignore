@@ -18,6 +18,8 @@ results/**
 !results/.gitkeep
 results.xml
 
+kubeconfig.yaml
+
 resources/options.yaml
 resources/install-config.yaml
 resources/clusterdeploy.yaml
