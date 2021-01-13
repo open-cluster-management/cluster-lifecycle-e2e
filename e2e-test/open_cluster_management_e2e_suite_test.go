@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,7 @@ import (
 	libgounstructuredv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/unstructured"
 	libgoapplier "github.com/open-cluster-management/library-go/pkg/applier"
 	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
+	libgoconfig "github.com/open-cluster-management/library-go/pkg/config"
 	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
 )
 
@@ -88,6 +90,7 @@ func TestOpenClusterManagementE2e(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "OpenClusterManagementE2E Suite", []Reporter{junitReporter})
 }
 
+var hubRestConfig *rest.Config
 var hubClientClient client.Client
 var hubClient kubernetes.Interface
 var hubClientDynamic dynamic.Interface
@@ -101,6 +104,8 @@ var hubSelfImportApplier *libgoapplier.Applier
 var _ = BeforeSuite(func() {
 	var err error
 	Expect(initVars()).To(BeNil())
+	hubRestConfig, err = libgoconfig.LoadConfig(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
+	Expect(err).To(BeNil())
 	//kubeconfig := libgooptions.GetHubKubeConfig(filepath.Join(libgooptions.TestOptions.Hub.ConfigDir, "kube"), libgooptions.TestOptions.Hub.KubeConfigPath)
 	hubClient, err = libgoclient.NewKubeClient(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
