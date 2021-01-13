@@ -1,45 +1,46 @@
-#Resource prefix, priority:
-# 1. From command-line
-# 2. From options.yaml
-# 3. Using the $USER environment variable.
-# 4. Default: ginkgo
-owner: owner
-#hub information
-hub:
-  name: 
-  user: BASE_USER
-  password: BASE_PASSWORD
-  baseDomain: BASE_DOMAIN
-  kubecontext: HUB_KUBE_CONTEXT 
-clusters:
-- name: IMPORT_CLUSTER_NAME
-  baseDomain: IMPORT_CLUSTER_BASE_DOMAIN
-  kubecontext: IMPORT_CLUSTER_KUBE_CONTEXT 
-#ocpReleaseVersion: quay.io/openshift-release-dev/ocp-release:4.5.15-x86_64
-cloudConnection:
-  pullSecret: |-
-    Fake_PullSecret
-  sshPublickey: |-
-    Fake_PublicKey
-  sshPrivatekey: |-
-   Fake_PrivateKey 
-  apiKeys:
-    aws:
-      awsAccessKeyID: 
-      awsSecretAccessKeyID: 
-      baseDnsDomain: BASE_DNS_DOMAIN
-      region: 
-    azure:
-      azureBaseDomainRGN: 
-      baseDnsDomain: BASE_DNS_DOMAIN
-      clientID: 
-      clientSecret: 
-      tenantID: 
-      subscriptionID: 
-      region: 
-    gcp:
-      gcpServiceAccountJsonKey: |-
-         
-      gcpProjectID: 
-      baseDnsDomain: BASE_DNS_DOMAIN
-      region: 
+options:
+  #Resource prefix, priority:
+  # 1. From command-line
+  # 2. From options.yaml
+  # 3. Using the $USER environment variable.
+  # 4. Default: ginkgo
+  owner: owner
+  #hub information
+  hub:
+    name: 
+    user: BASE_USER
+    password: BASE_PASSWORD
+    baseDomain: BASE_DOMAIN
+    kubecontext: HUB_KUBE_CONTEXT 
+  clusters:
+  - name: IMPORT_CLUSTER_NAME
+    baseDomain: IMPORT_CLUSTER_BASE_DOMAIN
+    kubecontext: IMPORT_CLUSTER_KUBE_CONTEXT 
+  #ocpReleaseVersion: quay.io/openshift-release-dev/ocp-release:4.5.15-x86_64
+  cloudConnection:
+    pullSecret: |-
+      Fake_PullSecret
+    sshPublickey: |-
+      Fake_PublicKey
+    sshPrivatekey: |-
+      Fake_PrivateKey 
+    apiKeys:
+      aws:
+        awsAccessKeyID: 
+        awsSecretAccessKeyID: 
+        baseDnsDomain: BASE_DNS_DOMAIN
+        region: 
+      azure:
+        azureBaseDomainRGN: 
+        baseDnsDomain: BASE_DNS_DOMAIN
+        clientID: 
+        clientSecret: 
+        tenantID: 
+        subscriptionID: 
+        region: 
+      gcp:
+        gcpServiceAccountJsonKey: |-
+          
+        gcpProjectID: 
+        baseDnsDomain: BASE_DNS_DOMAIN
+        region: 
