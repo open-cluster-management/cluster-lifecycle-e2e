@@ -131,7 +131,6 @@ func getMetricsQuery(queryExpression string) (resp *http.Response, body []byte, 
 	}
 
 	bearerToken := hubRestConfig.BearerToken
-	klog.Infof("bearerToken:%s", bearerToken)
 	req.Header.Add("Authorization", "Bearer "+bearerToken)
 
 	client := http.Client{}
