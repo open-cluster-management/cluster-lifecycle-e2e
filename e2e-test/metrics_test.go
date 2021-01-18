@@ -87,7 +87,7 @@ var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics
 		By("Getting metrics", func() {
 			Eventually(func() error {
 				query := "sum(acm_managed_cluster_info{hub_cluster_id=\"" +
-					clusterID + "\",cluster_id=\"" + clusterID + "\"})"
+					clusterID + "\",managed_cluster_id=\"" + clusterID + "\"})"
 				klog.V(1).Infof("Querying metric expression:%s", query)
 				resp, b, err := getMetricsQuery(query)
 				if err != nil {
