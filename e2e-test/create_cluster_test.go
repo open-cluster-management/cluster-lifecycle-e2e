@@ -33,6 +33,23 @@ import (
 	"k8s.io/klog"
 )
 
+type Hosts struct {
+	Name            string
+	Namespace       string
+	Role            string
+	Bmc             BMC
+	BootMACAddress  string
+	HardwareProfile string
+}
+
+// BMC ...
+type BMC struct {
+	address                        string
+	disableCertificateVerification bool
+	username                       string
+	password                       string
+}
+
 var _ = Describe("Cluster-lifecycle: ", func() {
 	createCluster("aws", "OpenShift")
 })
@@ -61,6 +78,9 @@ func createCluster(cloud, vendor string) {
 		clusterNameObj, err = libgooptions.NewClusterName(cloud)
 		Expect(err).To(BeNil())
 		clusterName = clusterNameObj.String()
+		if cloud == "baremetal" {
+			clusterName = libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterName
+		}
 		klog.V(1).Infof(`========================= Start Test create cluster %s 
 with image %s ===============================`, clusterName, imageRefName)
 		SetDefaultEventuallyTimeout(10 * time.Minute)
@@ -181,8 +201,9 @@ with image %s ===============================`, clusterName, imageRefName)
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" {
-				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
-				Expect(err).To(BeNil())
+				// imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
+				// Expect(err).To(BeNil())
+				imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			} else {
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
 				imagesetsList, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
@@ -271,16 +292,20 @@ with image %s ===============================`, clusterName, imageRefName)
 			waitClusterImported(hubClientDynamic, clusterName)
 		})
 
-		When("Imported, validate...", func() {
-			validateClusterImported(hubClientDynamic, hubClient, clusterName)
-		})
+		if cloud != "baremetal" {
+			When("Imported, validate...", func() {
+				validateClusterImported(hubClientDynamic, hubClient, clusterName)
+			})
+		}
 
 		klog.V(1).Infof("Cluster %s: Wait 3 min to settle", clusterName)
 		time.Sleep(3 * time.Minute)
 
-		When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
-			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
-		})
+		if cloud != "baremetal" {
+			When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
+				waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+			})
+		}
 
 		klog.V(1).Infof("========================= End Test create cluster %s ===============================", clusterName)
 
@@ -361,6 +386,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			return err
 		}
 	}
+
 	var b []byte
 	switch cloud {
 	case "aws":
@@ -410,22 +436,37 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		installConfigValues := struct {
 			ManagedClusterName             string
 			ManagedClusterBaseDomain       string
-			ManagedClusterLibvirtURI       string
+			LibvirtURI                     string
+			ProvisioningNetworkCIDR        string
+			ProvisioningNetworkInterface   string
+			ProvisioningBridge             string
+			ExternalBridge                 string
+			APIVIP                         string
+			IngressVIP                     string
 			ManagedClusterBootstrapOSImage string
 			ManagedClusterClusterOSImage   string
 			ManagedClusterSSHPublicKey     string
 			ManagedClusterTrustBundle      string
+			ImageRegistryMirror            string
 			Hosts                          []libgooptions.Hosts
 		}{
 			ManagedClusterName:             clusterName,
 			ManagedClusterBaseDomain:       baseDomain,
-			ManagedClusterLibvirtURI:       libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.LibvirtURI,
+			LibvirtURI:                     libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.LibvirtURI,
+			ProvisioningNetworkCIDR:        libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ProvisioningNetworkCIDR,
+			ProvisioningNetworkInterface:   libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ProvisioningNetworkInterface,
+			ProvisioningBridge:             libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ProvisioningBridge,
+			ExternalBridge:                 libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ExternalBridge,
+			APIVIP:                         libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.APIVIP,
+			IngressVIP:                     libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.IngressVIP,
 			ManagedClusterBootstrapOSImage: libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.BootstrapOSImage,
 			ManagedClusterClusterOSImage:   libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterOSImage,
 			ManagedClusterSSHPublicKey:     libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 			ManagedClusterTrustBundle:      libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.TrustBundle,
+			ImageRegistryMirror:            libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ImageRegistryMirror,
 			Hosts:                          libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.Hosts,
 		}
+
 		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:
 		return fmt.Errorf("Unsupporter cloud %s", cloud)
@@ -461,13 +502,14 @@ func createKlusterletAddonConfig(hubCreateApplier *libgoapplier.Applier, cluster
 }
 
 func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameObj *libgooptions.ClusterName, ocpImageRelease string) (string, error) {
-	ocpImageReleaseSlice := strings.Split(ocpImageRelease, ":")
-	if len(ocpImageReleaseSlice) != 2 {
-		return "", fmt.Errorf("OCPImageRelease malformed: %s (no tag)", ocpImageRelease)
-	}
-	normalizedOCPImageRelease := strings.ReplaceAll(ocpImageReleaseSlice[1], "_", "-")
-	normalizedOCPImageRelease = strings.ToLower(normalizedOCPImageRelease)
-	clusterImageSetName := fmt.Sprintf("%s-%s", normalizedOCPImageRelease, clusterNameObj.GetUID())
+	// ocpImageReleaseSlice := strings.Split(ocpImageRelease, ":")
+	// if len(ocpImageReleaseSlice) != 2 {
+	// 	return "", fmt.Errorf("OCPImageRelease malformed: %s (no tag)", ocpImageRelease)
+	// }
+	// normalizedOCPImageRelease := strings.ReplaceAll(ocpImageReleaseSlice[1], "_", "-")
+	// normalizedOCPImageRelease = strings.ToLower(normalizedOCPImageRelease)
+	// clusterImageSetName := fmt.Sprintf("%s-%s", normalizedOCPImageRelease, clusterNameObj.GetUID())
+	clusterImageSetName := "img4.6.1-x86-64"
 	values := struct {
 		ClusterImageSetName string
 		OCPReleaseImage     string

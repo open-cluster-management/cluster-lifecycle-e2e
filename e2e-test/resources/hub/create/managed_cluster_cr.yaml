@@ -2,7 +2,11 @@ apiVersion: cluster.open-cluster-management.io/v1
 kind: ManagedCluster
 metadata:
   labels:
+{{if (eq .ManagedClusterCloud "baremetal") }}
+    cloud: Bare-Metal
+{{ else }}
     cloud: {{ .ManagedClusterCloud }}
+{{ end }}
     name: {{ .ManagedClusterName }}
     vendor: {{ .ManagedClusterVendor }}
   name: {{ .ManagedClusterName }}

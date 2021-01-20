@@ -4,7 +4,11 @@ metadata:
   name: {{ .ManagedClusterName }}
   namespace: {{ .ManagedClusterName }}
   labels:
+{{if (eq .ManagedClusterCloud "baremetal") }}
+    cloud: Bare-Metal
+{{ else }}
     cloud: {{ .ManagedClusterCloud }}
+{{ end }}
     region: {{ .ManagedClusterRegion }}
     vendor: {{ .ManagedClusterVendor }}
 spec:
@@ -29,8 +33,8 @@ spec:
     baremetal:
       libvirtSSHPrivateKeySecretRef:
         name: {{ .ManagedClusterName }}-ssh-private-key
-      hosts: >-
-        {{ .Hosts }}
+      hosts: 
+{{ toYaml .Hosts | indent 6 }}
 {{ end }}
       credentialsSecretRef:
         name: {{ .ManagedClusterName }}-creds
@@ -41,8 +45,8 @@ spec:
     sshPrivateKeySecretRef:
       name: {{ .ManagedClusterName }}-ssh-private-key
     imageSetRef:
-       #quay.io/openshift-release-dev/ocp-release:4.3.28-x86_64
-      name: {{ .ManagedClusterImageRefName }}
+      #name: {{ .ManagedClusterImageRefName }}
+      name: img4.6.1-x86-64
 {{if (eq .ManagedClusterCloud "baremetal") }}
     sshKnownHosts: {{ .SSHKnownHosts }}
 {{ end }}

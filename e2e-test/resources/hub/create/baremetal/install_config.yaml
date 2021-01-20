@@ -3,7 +3,6 @@ metadata:
   name: {{ .ManagedClusterName }}
 baseDomain: {{ .ManagedClusterBaseDomain }}
 controlPlane:
-  hyperthreading: Enabled
   name: master
   replicas: 3
   platform:
@@ -21,21 +20,43 @@ networking:
   - 172.30.0.0/16
 platform:
   baremetal:
-    libvirtURI: {{ .ManagedClusterLibvirtURI }}
-    provisioningNetworkCIDR:
-    provisioningNetworkInterface: enp1s0
-    provisioningBridge: provisioning
-    externalBridge: baremetal
-    apiVIP:
-    ingressVIP:
+    libvirtURI: {{ .LibvirtURI }}
+    provisioningNetworkCIDR: {{ .ProvisioningNetworkCIDR }}
+    provisioningNetworkInterface: {{ .ProvisioningNetworkInterface }}
+    provisioningBridge: {{ .ProvisioningBridge }}
+    externalBridge: {{ .ExternalBridge }}
+    apiVIP: {{ .APIVIP }}
+    ingressVIP: {{ .IngressVIP }}
     bootstrapOSImage: >-
       {{ .ManagedClusterBootstrapOSImage }}
     clusterOSImage: >-
       {{ .ManagedClusterClusterOSImage }}
-    hosts: >-
-      {{ .Hosts }}
+    hosts: {{ range .Hosts }}
+      - name: {{ .Name }}
+        namespace: {{ .Namespace }}
+        role: {{ .Role }}
+        bmc:
+          address: '{{ .Bmc.Address }}'
+          disableCertificateVerification: {{ .Bmc.DisableCertificateVerification }}
+          username: {{ .Bmc.Username }}
+          password: {{ .Bmc.Password }}
+        bootMACAddress: '{{ .BootMACAddress}}'
+        hardwareProfile: {{ .HardwareProfile}}{{ end }}
 pullSecret: "" # skip, hive will inject based on it's secrets
 sshKey: |-
 {{ .ManagedClusterSSHPublicKey | indent 4 }}
-additionalTrustBundle: |-
-{{ .ManagedClusterTrustBundle | indent 4 }}
+additionalTrustBundle: |- 
+{{ .ManagedClusterTrustBundle | indent 4}}
+imageContentSources:
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-release-nightly
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-release
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
