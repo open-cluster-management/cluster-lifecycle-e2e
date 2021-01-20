@@ -6,6 +6,7 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -133,7 +134,12 @@ func getMetricsQuery(queryExpression string) (resp *http.Response, body []byte, 
 	bearerToken := hubRestConfig.BearerToken
 	req.Header.Add("Authorization", "Bearer "+bearerToken)
 
-	client := http.Client{}
+	//Set true to insecureSkipVerify if kube config is set so
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: hubRestConfig.Insecure},
+	}
+
+	client := http.Client{Transport: tr}
 	resp, err = client.Do(req)
 	if err != nil {
 		return
