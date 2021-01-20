@@ -85,6 +85,8 @@ TEST_GROUP values can be
 - import -> to import an existing cluster
 - provision-all -> to provision aws, gcp, azure clusters in parallel
 - destroy -> to deatch an existing imported cluster
+- metrics -> to test the clusterlifecycle metrics from prometheus
+- baremetal -> to provision baremetal cluster
 
 For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig` 
 
