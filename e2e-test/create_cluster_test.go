@@ -270,43 +270,6 @@ with image %s ===============================`, clusterName, imageRefName)
 			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
 		})
 
-		// By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
-		// 	klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
-		// 	gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
-		// 	Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
-		// })
-
-		// When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
-		// 	waitDetached(hubClientDynamic, clusterName)
-		// })
-
-		// When("Detached, validate...", func() {
-		// 	validateClusterDetached(hubClientDynamic, hubClient, clusterName)
-		// })
-
-		// By("Re-attaching the cluster by recreating the managedCluster and klusterletaddonconfig", func() {
-		// 	// createKlusterletAddonConfig(hubCreateApplier, clusterName, cloud, vendor)
-		// 	createManagedCluster(hubCreateApplier, clusterName, cloud, vendor)
-		// })
-
-		// When(fmt.Sprintf("Checking if the cluster %s gets re-imported", clusterName), func() {
-		// 	waitClusterImported(hubClientDynamic, clusterName)
-		// })
-
-		// When(fmt.Sprintf("Detached, delete the clusterDeployment %s", clusterName), func() {
-		// 	klog.V(1).Infof("Cluster %s: Deleting the clusterDeployment for cluster %s", clusterName, clusterName)
-		// 	gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
-		// 	Expect(hubClientDynamic.Resource(gvr).Namespace(clusterName).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
-		// })
-
-		// When(fmt.Sprintf("Wait clusterDeployment %s to be deleted", clusterName), func() {
-		// 	waitDetroyed(hubClientDynamic, clusterName)
-		// })
-
-		// When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
-		// 	waitNamespaceDeleted(hubClient, clusterName)
-		// })
-
 		klog.V(1).Infof("========================= End Test create cluster %s ===============================", clusterName)
 
 	})
