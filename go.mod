@@ -8,10 +8,9 @@ require (
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1
 	//github.com/open-cluster-management/endpoint-operator v1.0.1-2020-05-28-18-29-00.0.20201123150704-b95ad181d88a // indirect
-	github.com/open-cluster-management/library-e2e-go v0.0.0-20201215212524-78a2239e545c
+	github.com/open-cluster-management/library-e2e-go v0.0.0-20210121202022-636e9fcaf89f
 	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
-	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0
 	k8s.io/api v0.19.0
 	k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery v0.19.0
@@ -26,6 +25,7 @@ replace (
 	github.com/coreos/etcd => go.etcd.io/etcd v3.3.22+incompatible
 	github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.2
 	github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v0.19.0
+	//github.com/open-cluster-management/library-e2e-go => /Users/ljawale/go/src/github.com/open-cluster-management/library-e2e-go
 	k8s.io/api => k8s.io/api v0.19.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0

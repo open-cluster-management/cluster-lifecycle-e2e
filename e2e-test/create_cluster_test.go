@@ -68,7 +68,7 @@ with image %s ===============================`, clusterName, imageRefName)
 
 	})
 
-	It(fmt.Sprintf("[P1][Sev1][cluster-lifecycle] Create and destroy cluster %s on %s with vendor %s (cluster/g1/create-cluster)", clusterName, cloud, vendor), func() {
+	It(fmt.Sprintf("[P1][Sev1][cluster-lifecycle] Create cluster %s on %s with vendor %s (cluster/g1/create-cluster)", clusterName, cloud, vendor), func() {
 		By("Checking the minimal requirements", func() {
 			klog.V(1).Infof("Cluster %s: Checking the minimal requirements", clusterName)
 			Eventually(func() bool {
@@ -250,6 +250,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				} else {
 					klog.V(4).Info(err)
 				}
+
 				return err
 			}, 3600, 60).Should(BeNil())
 		})
@@ -269,15 +270,15 @@ with image %s ===============================`, clusterName, imageRefName)
 			waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
 		})
 
-		By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
-			klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
-			gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
-			Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
-		})
+		// By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
+		// 	klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
+		// 	gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
+		// 	Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
+		// })
 
-		When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
-			waitDetached(hubClientDynamic, clusterName)
-		})
+		// When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
+		// 	waitDetached(hubClientDynamic, clusterName)
+		// })
 
 		// When("Detached, validate...", func() {
 		// 	validateClusterDetached(hubClientDynamic, hubClient, clusterName)
@@ -292,19 +293,19 @@ with image %s ===============================`, clusterName, imageRefName)
 		// 	waitClusterImported(hubClientDynamic, clusterName)
 		// })
 
-		When(fmt.Sprintf("Detached, delete the clusterDeployment %s", clusterName), func() {
-			klog.V(1).Infof("Cluster %s: Deleting the clusterDeployment for cluster %s", clusterName, clusterName)
-			gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
-			Expect(hubClientDynamic.Resource(gvr).Namespace(clusterName).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
-		})
+		// When(fmt.Sprintf("Detached, delete the clusterDeployment %s", clusterName), func() {
+		// 	klog.V(1).Infof("Cluster %s: Deleting the clusterDeployment for cluster %s", clusterName, clusterName)
+		// 	gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
+		// 	Expect(hubClientDynamic.Resource(gvr).Namespace(clusterName).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
+		// })
 
-		When(fmt.Sprintf("Wait clusterDeployment %s to be deleted", clusterName), func() {
-			waitDetroyed(hubClientDynamic, clusterName)
-		})
+		// When(fmt.Sprintf("Wait clusterDeployment %s to be deleted", clusterName), func() {
+		// 	waitDetroyed(hubClientDynamic, clusterName)
+		// })
 
-		When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
-			waitNamespaceDeleted(hubClient, clusterName)
-		})
+		// When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
+		// 	waitNamespaceDeleted(hubClient, clusterName)
+		// })
 
 		klog.V(1).Infof("========================= End Test create cluster %s ===============================", clusterName)
 
