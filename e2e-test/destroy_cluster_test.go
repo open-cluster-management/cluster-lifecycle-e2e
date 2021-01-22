@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
 	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
 	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
 
@@ -51,7 +52,7 @@ func destroyCluster(cloud, vendor string) {
 			if metadata, ok := cd.Object["metadata"]; ok {
 				meta := metadata.(map[string]interface{})
 				if name, ok := meta["name"]; ok {
-					if strings.HasPrefix(name.(string), cloud+"-ginkgo") {
+					if strings.HasPrefix(name.(string), cloud+"-"+libgooptions.GetOwner()) {
 						clusterName = name.(string)
 						break
 					}
