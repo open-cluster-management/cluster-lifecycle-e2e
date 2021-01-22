@@ -85,7 +85,7 @@ func init() {
 
 func TestOpenClusterManagementE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result", config.GinkgoConfig.ParallelNode))
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", libgocmd.End2End.ReportFile, config.GinkgoConfig.ParallelNode))
 	//junitReporter := reporters.NewJUnitReporter(libgocmd.End2End.ReportFile)
 	RunSpecsWithDefaultAndCustomReporters(t, "OpenClusterManagementE2E Suite", []Reporter{junitReporter})
 }
@@ -129,6 +129,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+
 })
 
 func initVars() error {
