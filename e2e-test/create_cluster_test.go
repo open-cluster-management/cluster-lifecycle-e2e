@@ -252,7 +252,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				}
 
 				return err
-			}, 3600, 60).Should(BeNil())
+			}, 4320, 60).Should(BeNil())
 		})
 
 		When(fmt.Sprintf("Import launched, wait for cluster %s to be ready", clusterName), func() {
