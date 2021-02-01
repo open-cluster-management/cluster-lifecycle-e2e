@@ -6,16 +6,12 @@ metadata:
 spec:
   clusterName: {{ .ManagedClusterName }}
   clusterNamespace: {{ .ManagedClusterName }}
-  applicationManager:
-    enabled: true
   clusterLabels:
     cloud: auto-detect
     vendor: auto-detect
-  connectionManager:
-    enabledGlobalView: false
-  policyController:
+  applicationManager:
     enabled: true
-  prometheusIntegration:
+  policyController:
     enabled: true
   searchCollector:
     enabled: true
@@ -23,4 +19,4 @@ spec:
     enabled: true
   iamPolicyController:
     enabled: true
-  version: 2.2.0
+  version: 2.0.0
