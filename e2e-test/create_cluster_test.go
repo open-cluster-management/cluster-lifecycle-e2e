@@ -73,6 +73,7 @@ func createCluster(cloud, vendor string) {
 
 	BeforeEach(func() {
 		if cloudProviders != "" && !isRequestedCloudProvider(cloud) {
+			klog.V(1).Infof("test is skipped %s %s", cloud, cloudProviders)
 			Skip(fmt.Sprintf("Cloud provider %s skipped", cloud))
 		}
 		clusterNameObj, err = libgooptions.NewClusterName(cloud)
