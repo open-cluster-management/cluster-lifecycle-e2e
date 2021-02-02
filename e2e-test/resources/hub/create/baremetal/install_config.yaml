@@ -20,7 +20,7 @@ networking:
   - 172.30.0.0/16
 platform:
   baremetal:
-    libvirtURI: {{ .LibvirtURI }}
+    libvirtURI: '{{ .LibvirtURI }}'
     provisioningNetworkCIDR: {{ .ProvisioningNetworkCIDR }}
     provisioningNetworkInterface: {{ .ProvisioningNetworkInterface }}
     provisioningBridge: {{ .ProvisioningBridge }}

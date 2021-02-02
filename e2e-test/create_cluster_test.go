@@ -200,10 +200,10 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
-			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" {
-				// imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
-				// Expect(err).To(BeNil())
-				imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
+			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud != "baremetal" {
+				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
+				Expect(err).To(BeNil())
+				//imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			} else {
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
 				imagesetsList, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
@@ -225,6 +225,9 @@ with image %s ===============================`, clusterName, imageRefName)
 				if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
 					imageRefName = imageSets[len(imageSets)-1]
 				}
+			}
+			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
+				imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			}
 		})
 
@@ -502,14 +505,13 @@ func createKlusterletAddonConfig(hubCreateApplier *libgoapplier.Applier, cluster
 }
 
 func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameObj *libgooptions.ClusterName, ocpImageRelease string) (string, error) {
-	// ocpImageReleaseSlice := strings.Split(ocpImageRelease, ":")
-	// if len(ocpImageReleaseSlice) != 2 {
-	// 	return "", fmt.Errorf("OCPImageRelease malformed: %s (no tag)", ocpImageRelease)
-	// }
-	// normalizedOCPImageRelease := strings.ReplaceAll(ocpImageReleaseSlice[1], "_", "-")
-	// normalizedOCPImageRelease = strings.ToLower(normalizedOCPImageRelease)
-	// clusterImageSetName := fmt.Sprintf("%s-%s", normalizedOCPImageRelease, clusterNameObj.GetUID())
-	clusterImageSetName := "img4.6.1-x86-64"
+	ocpImageReleaseSlice := strings.Split(ocpImageRelease, ":")
+	if len(ocpImageReleaseSlice) != 2 {
+		return "", fmt.Errorf("OCPImageRelease malformed: %s (no tag)", ocpImageRelease)
+	}
+	normalizedOCPImageRelease := strings.ReplaceAll(ocpImageReleaseSlice[1], "_", "-")
+	normalizedOCPImageRelease = strings.ToLower(normalizedOCPImageRelease)
+	clusterImageSetName := fmt.Sprintf("%s-%s", normalizedOCPImageRelease, clusterNameObj.GetUID())
 	values := struct {
 		ClusterImageSetName string
 		OCPReleaseImage     string
