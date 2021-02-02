@@ -13,5 +13,5 @@ elif [[ $TEST_GROUP == "destroy" ]]; then
 elif [[ $TEST_GROUP == "metrics" ]]; then
     ginkgo -v -focus="metrics" -skip="" --reportFile=$REPORT_FILE_METRICS -trace -debug e2e-test.test -- -v=3
 elif [[ $TEST_GROUP == "baremetal" ]]; then
-    ginkgo -v -focus="baremetal" -skip="" --reportFile=$REPORT_FILE_BM -trace -debug e2e-test.test -- -v=3 
+    ginkgo -v -focus="baremetal" -skip="" --reportFile=$REPORT_FILE_BM -trace -debug e2e-test.test -- -v=3 -cloud-providers=baremetal
 fi
