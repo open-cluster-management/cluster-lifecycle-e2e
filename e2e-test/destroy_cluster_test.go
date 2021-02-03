@@ -34,7 +34,7 @@ var _ = Describe("Cluster-lifecycle: ", func() {
 })
 
 var _ = Describe("Cluster-lifecycle: ", func() {
-	createCluster("baremetal", "OpenShift")
+	destroyCluster("baremetal", "OpenShift")
 })
 
 func destroyCluster(cloud, vendor string) {
@@ -63,6 +63,10 @@ func destroyCluster(cloud, vendor string) {
 				}
 			}
 		}
+		if cloud == "baremetal" {
+			clusterName = libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterName
+		}
+
 		klog.V(1).Infof(`========================= Start Test destroy cluster %s  ===============================`, clusterName)
 		SetDefaultEventuallyTimeout(10 * time.Minute)
 		SetDefaultEventuallyPollingInterval(10 * time.Second)
