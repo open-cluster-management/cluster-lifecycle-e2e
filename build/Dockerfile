@@ -42,10 +42,10 @@ ENV REPORT_FILE_DESTROY "/results/results-destroy"
 ENV REPORT_FILE_METRICS "/results/results-metrics.xml"
 ENV REPORT_FILE_BM "/results/results-baremetal.xml"
 ENV GINKGO_DEFAULT_FLAGS "-slowSpecThreshold=120 -timeout 7200s"
-ENV GINKGO_NODES "11"
-ENV GINKGO_FLAGS=""
-ENV GINKGO_FOCUS=""
-ENV GINKGO_SKIP=""
+# ENV GINKGO_NODES "11"
+# ENV GINKGO_FLAGS=""
+# ENV GINKGO_FOCUS=""
+# ENV GINKGO_SKIP=""
 
 # run as root
 USER root
