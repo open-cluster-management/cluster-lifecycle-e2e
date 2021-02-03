@@ -19,7 +19,7 @@ WORKDIR $REMOTE_SOURCE_DIR/app
 # RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
 # compile go tests in build image
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo && GOFLAGS="" ginkgo build -tags e2e e2e-test 
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build -tags e2e e2e-test 
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
