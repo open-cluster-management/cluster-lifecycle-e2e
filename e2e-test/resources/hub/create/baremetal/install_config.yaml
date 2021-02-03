@@ -20,7 +20,7 @@ networking:
   - 172.30.0.0/16
 platform:
   baremetal:
-    libvirtURI: '{{ .LibvirtURI }}'
+    libvirtURI: {{ .LibvirtURI }}
     provisioningNetworkCIDR: {{ .ProvisioningNetworkCIDR }}
     provisioningNetworkInterface: {{ .ProvisioningNetworkInterface }}
     provisioningBridge: {{ .ProvisioningBridge }}
@@ -40,7 +40,7 @@ platform:
           disableCertificateVerification: {{ .Bmc.DisableCertificateVerification }}
           username: {{ .Bmc.Username }}
           password: {{ .Bmc.Password }}
-        bootMACAddress: '{{ .BootMACAddress}}'
+        bootMACAddress: {{ .BootMACAddress}}
         hardwareProfile: {{ .HardwareProfile}}{{ end }}
 pullSecret: "" # skip, hive will inject based on it's secrets
 sshKey: |-
