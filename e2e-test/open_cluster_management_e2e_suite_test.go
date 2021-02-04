@@ -139,7 +139,8 @@ func initVars() error {
 		klog.Errorf("--options error: %v", err)
 		return err
 	}
-
+	// o, _ := yaml.Marshal(libgooptions.TestOptions)
+	// fmt.Println("testoptions:\n", string(o))
 	//Expect(err).NotTo(HaveOccurred())
 
 	if libgooptions.TestOptions.Options.Hub.KubeConfig == "" {
