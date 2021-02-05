@@ -45,13 +45,24 @@ options:
         baseDnsDomain: BASE_DNS_DOMAIN
         region: 
       baremetal:
+        clusterName: CLUSTER_NAME
         baseDnsDomain: BASE_DNS_DOMAIN
         libvirtURI:
+        provisioningNetworkCIDR: 
+        provisioningNetworkInterface: 
+        provisioningBridge: 
+        externalBridge: 
+        apiVIP: 
+        ingressVIP: 
         sshKnownHostsList:
+          - ssh-host
         imageRegistryMirror:
         bootstrapOSImage:
         clusterOSImage:
-        trustBundle:
+        trustBundle: |-
+          -----BEGIN CERTIFICATE-----
+          fake bundle
+          -----END CERTIFICATE-----
         hosts:
         - name: f24-h27-000-r630-master-1-0
           namespace: default
