@@ -13,5 +13,5 @@ spec:
         iops: 100
         size: 100
         type: gp2
-      type: m5.4xlarge
+      type: m5.xlarge
   replicas: 3
