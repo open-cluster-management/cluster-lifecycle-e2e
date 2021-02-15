@@ -19,7 +19,7 @@ WORKDIR $REMOTE_SOURCE_DIR/app
 # RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
 # compile go tests in build image
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo && GOFLAGS="" ginkgo build -tags e2e e2e-test 
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build -tags e2e e2e-test 
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -37,13 +37,15 @@ ENV KUBECONFIG "/opt/.kube/config"
 ENV IMPORT_KUBECONFIG "/opt/.kube/import-kubeconfig"
 ENV OPTIONS "/resources/options.yaml"
 ENV REPORT_FILE_IMPORT "/results/results-import.xml"
-#ENV REPORT_FILE_CREATE "/results/results-provision.xml"
-ENV REPORT_FILE_DETACH "/results/results-detach.xml"
+ENV REPORT_FILE_CREATE "/results/results-provision"
+ENV REPORT_FILE_DESTROY "/results/results-destroy"
+ENV REPORT_FILE_METRICS "/results/results-metrics.xml"
+ENV REPORT_FILE_BM "/results/results-baremetal.xml"
 ENV GINKGO_DEFAULT_FLAGS "-slowSpecThreshold=120 -timeout 7200s"
-ENV GINKGO_NODES "11"
-ENV GINKGO_FLAGS=""
-ENV GINKGO_FOCUS=""
-ENV GINKGO_SKIP=""
+# ENV GINKGO_NODES "11"
+# ENV GINKGO_FLAGS=""
+# ENV GINKGO_FOCUS=""
+# ENV GINKGO_SKIP=""
 
 # run as root
 USER root

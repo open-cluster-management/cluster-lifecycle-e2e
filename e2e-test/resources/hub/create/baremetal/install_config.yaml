@@ -1,0 +1,62 @@
+apiVersion: v1
+metadata:
+  name: {{ .ManagedClusterName }}
+baseDomain: {{ .ManagedClusterBaseDomain }}
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    baremetal: {}
+compute:
+- name: worker
+  replicas: 2
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineCIDR: 192.168.124.0/24
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  baremetal:
+    libvirtURI: {{ .LibvirtURI }}
+    provisioningNetworkCIDR: {{ .ProvisioningNetworkCIDR }}
+    provisioningNetworkInterface: {{ .ProvisioningNetworkInterface }}
+    provisioningBridge: {{ .ProvisioningBridge }}
+    externalBridge: {{ .ExternalBridge }}
+    apiVIP: {{ .APIVIP }}
+    ingressVIP: {{ .IngressVIP }}
+    bootstrapOSImage: >-
+      {{ .ManagedClusterBootstrapOSImage }}
+    clusterOSImage: >-
+      {{ .ManagedClusterClusterOSImage }}
+    hosts: {{ range .Hosts }}
+      - name: {{ .Name }}
+        namespace: {{ .Namespace }}
+        role: {{ .Role }}
+        bmc:
+          address: '{{ .Bmc.Address }}'
+          disableCertificateVerification: {{ .Bmc.DisableCertificateVerification }}
+          username: {{ .Bmc.Username }}
+          password: {{ .Bmc.Password }}
+        bootMACAddress: {{ .BootMACAddress}}
+        hardwareProfile: {{ .HardwareProfile}}{{ end }}
+pullSecret: "" # skip, hive will inject based on it's secrets
+sshKey: |-
+{{ .ManagedClusterSSHPublicKey | indent 4 }}
+additionalTrustBundle: |- 
+{{ .ManagedClusterTrustBundle | indent 4}}
+imageContentSources:
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-release-nightly
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-release
+  - mirrors:
+      - >-
+        {{ .ImageRegistryMirror }}
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
