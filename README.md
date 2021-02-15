@@ -9,15 +9,15 @@ This will be called after ACM is installed.
 
 The tests in this container will:
 1. Provision aws, gcp, azure cluster  
-   - Create necessary resources to provision cluster 
+   - Create necessary resources to provision cluster
    - monitor cluster and add-ons to be in ready state
    - destroy cluster
-   - monitor deletiion of clusterdeployment and cluster-namespace
-2. Import already exiisting cluster 
-   - monitor cluster and add-ons to be iin ready state
-   - detach imported cluster 
+   - monitor deletion of clusterdeployment and cluster-namespace
+2. Import already existing cluster
+   - monitor cluster and add-ons to be in ready state
+   - detach imported cluster
    - monitor deletion of cluster-namespace
-3. Check if local-cluster is imported and in ready state 
+3. Check if local-cluster is imported and in ready state
 
 ## Running E2E
 
@@ -27,17 +27,17 @@ The tests in this container will:
 $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 ```
 
-2. copy `resources/options.yaml.template` to `resources/options.yaml`, and update values specific to your environment:
+2. copy `e2e-test/resources/options.yaml.template` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp resources/options.yaml.template resources/options.yaml
+$ cp e2e-test/resources/options.yaml.template e2e-test/resources/options.yaml
 ```
 
 3. run testing:
 
 ```
 $ export KUBECONFIG=~/.kube/config
-$ ginkgo -v -p -stream -- -options=resources/options.yaml -v=3
+$ ginkgo -v -p -stream -- -options=e2e-test/resources/options.yaml -v=3
 ```
 
 ## Running with Docker
@@ -46,12 +46,13 @@ $ ginkgo -v -p -stream -- -options=resources/options.yaml -v=3
 
 ```
 $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
+$ cd cluster-lifecycle-e2e
 ```
 
-2. copy `resources/options.yaml.template` to `resources/options.yaml`, and update values specific to your environment:
+2. copy `e2e-test/resources/options_template.yaml` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp resources/options.yaml.template resources/options.yaml
+$ cp e2e-test/resources/options_template.yaml e2e-test/resources/options.yaml
 ```
 
 3. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
@@ -76,22 +77,22 @@ $ make build
 6. run the following command to get docker image ID, we will use this in the next step:
 
 ```
-$ docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
+$ EXPORT docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
 ```
 
 7. run testing:
 
-TEST_GROUP values can be 
+TEST_GROUP values can be
 - import -> to import an existing cluster
 - provision-all -> to provision aws, gcp, azure clusters in parallel
 - destroy -> to deatch an existing imported cluster
 - metrics -> to test the clusterlifecycle metrics from prometheus
 - baremetal -> to provision baremetal cluster
 
-For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig` 
+For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig`
 
 ```
-$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/e2e-test/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/e2e-test/resources:/resources -v $(pwd)/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
+$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/e2e-test/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/e2e-test/resources:/resources -v $(pwd)/e2e-test/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
 ```
 
 In Canary environment, this is the container that will be run - and all the volumes etc will passed on while starting the docker container using a helper script.

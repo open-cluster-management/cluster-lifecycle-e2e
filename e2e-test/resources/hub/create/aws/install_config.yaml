@@ -12,7 +12,7 @@ controlPlane:
         iops: 4000
         size: 100
         type: io1
-      type: m5.4xlarge
+      type: m5.xlarge
 compute:
 - hyperthreading: Enabled
   name: worker
@@ -23,7 +23,7 @@ compute:
         iops: 2000
         size: 100
         type: io1
-      type: m5.4xlarge
+      type: m5.xlarge
 networking:
   clusterNetwork:
   - cidr: 10.128.0.0/14
