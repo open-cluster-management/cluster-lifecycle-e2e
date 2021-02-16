@@ -85,9 +85,10 @@ $ EXPORT docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1
 TEST_GROUP values can be
 - import -> to import an existing cluster
 - provision-all -> to provision aws, gcp, azure clusters in parallel
-- destroy -> to deatch an existing imported cluster
+- destroy -> to deatch an existing imported cluster and destroy provisioned cluster
 - metrics -> to test the clusterlifecycle metrics from prometheus
-- baremetal -> to provision baremetal cluster
+- create-baremetal -> to provision baremetal cluster
+- destroy-baremetal -> to destroy baremetal cluster
 
 For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig`
 
