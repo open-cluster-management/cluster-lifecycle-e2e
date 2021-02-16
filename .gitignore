@@ -24,6 +24,8 @@ resources/options.yaml
 resources/install-config.yaml
 resources/clusterdeploy.yaml
 
+e2e-test/resources/options.yaml
+
 .build-harness
 .build-harness-bootstrap
 .vscode
@@ -38,4 +40,3 @@ local.rc
 !vbh/build-harness-extensions
 
 #observability-e2e-test.test
-

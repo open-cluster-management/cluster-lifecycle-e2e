@@ -48,7 +48,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
 		for _, managedCluster := range libgooptions.TestOptions.Options.ManagedClusters {
 			var clusterName = managedCluster.Name
-			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", managedCluster.Name)
+			klog.V(1).Infof("========================= Test cluster detach cluster %s ===============================", managedCluster.Name)
 			// managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})
 			// Expect(err).To(BeNil())
 			// managedClusterApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
