@@ -8,7 +8,7 @@ require (
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.1
 	//github.com/open-cluster-management/endpoint-operator v1.0.1-2020-05-28-18-29-00.0.20201123150704-b95ad181d88a // indirect
-	github.com/open-cluster-management/library-e2e-go v0.0.0-20210202174402-9a8c618032c3
+	github.com/open-cluster-management/library-e2e-go v0.0.0-20210219164826-04b5828bcc17
 	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
 	k8s.io/api v0.19.0
 	k8s.io/apiextensions-apiserver v0.19.0
