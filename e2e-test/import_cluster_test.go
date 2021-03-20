@@ -75,8 +75,8 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
 					"open-cluster-management",
 					[]string{
-						"managedcluster-import-controller",
-						"klusterlet-addon-controller",
+						"managedcluster-import-controller-v2",
+						"klusterlet-addon-controller-v2",
 					})
 				return err
 			}).Should(BeNil())

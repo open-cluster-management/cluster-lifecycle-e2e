@@ -111,7 +111,10 @@ with image %s ===============================`, clusterName, imageRefName)
 			Eventually(func() bool {
 				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
 					"open-cluster-management",
-					[]string{"managedcluster-import-controller"})
+					[]string{
+						"managedcluster-import-controller-v2",
+						"klusterlet-addon-controller-v2",
+					})
 				if !has {
 					klog.Errorf("Cluster %s: Missing deployments\n%#v", clusterName, missing)
 				}
