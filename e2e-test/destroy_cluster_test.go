@@ -129,11 +129,11 @@ func destroyCluster(cloud, vendor string) {
 			Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
 		})
 
-		if cloud != "baremetal" {
-			When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
-				waitDetached(hubClientDynamic, clusterName)
-			})
-		}
+		// if cloud != "baremetal" {
+		// 	When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
+		// 		waitDetached(hubClientDynamic, clusterName)
+		// 	})
+		// }
 
 		When(fmt.Sprintf("Detached, delete the clusterDeployment %s", clusterName), func() {
 			klog.V(1).Infof("Cluster %s: Deleting the clusterDeployment for cluster %s", clusterName, clusterName)
