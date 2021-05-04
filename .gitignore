@@ -17,14 +17,16 @@ Dockerfile.tmp
 results/**
 !results/.gitkeep
 results.xml
+results*.xml
+e2e-test.test
 
 kubeconfig.yaml
 
 resources/options.yaml
 resources/install-config.yaml
 resources/clusterdeploy.yaml
-
 e2e-test/resources/options.yaml
+e2e-test/resources/import/kubeconfig
 
 .build-harness
 .build-harness-bootstrap

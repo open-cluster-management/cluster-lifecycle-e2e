@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
@@ -21,6 +22,7 @@ import (
 	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
 	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
 	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
+	libgoconfig "github.com/open-cluster-management/library-go/pkg/config"
 
 	"k8s.io/klog"
 )
@@ -32,6 +34,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 	//var managedClusterClient client.Client
 	var managedClusterKubeClient kubernetes.Interface
 	var managedClusterDynamicClient dynamic.Interface
+	var managedClusterDiscoveryClient *discovery.DiscoveryClient
 	//var managedClusterApplier *libgoapplier.Applier
 
 	// BeforeEach(func() {
@@ -58,6 +61,10 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			managedClusterKubeClient, err = libgoclient.NewDefaultKubeClient(managedCluster.KubeConfig)
 			Expect(err).To(BeNil())
 			managedClusterDynamicClient, err = libgoclient.NewDefaultKubeClientDynamic(managedCluster.KubeConfig)
+			Expect(err).To(BeNil())
+			managedClusterRestConfig, err := libgoconfig.LoadConfig("", managedCluster.KubeConfig, "")
+			Expect(err).To(BeNil())
+			managedClusterDiscoveryClient, err = discovery.NewDiscoveryClientForConfig(managedClusterRestConfig)
 			Expect(err).To(BeNil())
 			// managedClusterDynamicClient, err = libgoclient.NewKubeClientDynamic(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
 			// Expect(err).To(BeNil())
@@ -102,35 +109,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 				waitDetached(hubClientDynamic, clusterName)
 			})
 
-			When("the deletion of the cluster is done, wait for the namespace deletion", func() {
-				By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
-					klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
-					Eventually(func() bool {
-						klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
-						_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
-						if err != nil {
-							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
-							return errors.IsNotFound(err)
-						}
-						return false
-					}).Should(BeTrue())
-					klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
-				})
-			})
-
 			When("the namespace is deleted, check if managed cluster is well cleaned", func() {
-				By(fmt.Sprintf("Checking if the %s is deleted", clusterName), func() {
-					klog.V(1).Infof("Cluster %s: Checking if the %s is deleted", clusterName, clusterName)
-					Eventually(func() bool {
-						klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
-						_, err := managedClusterKubeClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
-						if err != nil {
-							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
-							return errors.IsNotFound(err)
-						}
-						return false
-					}).Should(BeTrue())
-				})
 				By(fmt.Sprintf("Checking if the %s namespace is deleted", openClusterManagementAgentAddonNamespace), func() {
 					klog.V(1).Infof("Cluster %s: Checking if the %s is deleted", clusterName, openClusterManagementAgentAddonNamespace)
 					Eventually(func() bool {
@@ -139,6 +118,10 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 						if err != nil {
 							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
 							return errors.IsNotFound(err)
+						}
+						err = printLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentAddonNamespace)
+						if err != nil {
+							klog.Error(err)
 						}
 						return false
 					}).Should(BeTrue())
@@ -151,6 +134,10 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 						if err != nil {
 							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
 							return errors.IsNotFound(err)
+						}
+						err = printLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentNamespace)
+						if err != nil {
+							klog.Error(err)
 						}
 						return false
 					}).Should(BeTrue())
@@ -169,8 +156,71 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 					}).Should(BeTrue())
 				})
 			})
+
+			When("the deletion of the cluster is done, wait for the namespace deletion", func() {
+				By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
+					klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
+					Eventually(func() bool {
+						klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
+						_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
+						if err != nil {
+							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
+							return errors.IsNotFound(err)
+						}
+						err = printLeftOver(hubClientDynamic, hubClientDiscovery, clusterName)
+						if err != nil {
+							klog.Error(err)
+						}
+						return false
+					}).Should(BeTrue())
+					klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
+				})
+			})
+
 		}
 
 	})
 
 })
+
+func printLeftOver(dynamicClient dynamic.Interface, discoveryClient *discovery.DiscoveryClient, ns string) error {
+	klog.Infof("==================== Left Over in %s ======================", ns)
+	_, err := dynamicClient.Resource(schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "namespaces",
+	}).Get(context.TODO(), ns, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+	apiResourceLists, err := discoveryClient.ServerPreferredNamespacedResources()
+	if err != nil {
+		return err
+	}
+	for _, apiResourceList := range apiResourceLists {
+		for _, apiResource := range apiResourceList.APIResources {
+			us, err := dynamicClient.Resource(
+				schema.GroupVersionResource{
+					Group:    apiResourceList.GroupVersionKind().Group,
+					Version:  apiResourceList.GroupVersion,
+					Resource: apiResource.Name,
+				}).Namespace(ns).List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				if !errors.IsNotFound(err) {
+					klog.Errorf("Group: %s, Version: %s, Resource: %s Error: %s",
+						apiResourceList.GroupVersionKind().Group,
+						apiResourceList.GroupVersion,
+						apiResource.Name, err)
+				}
+				continue
+			}
+			for _, u := range us.Items {
+				klog.Infof("Kind: %s, Name: %s", u.GetKind(), u.GetName())
+			}
+		}
+	}
+	return nil
+}

@@ -29,7 +29,6 @@ import (
 	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
 
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 )
 
@@ -218,6 +217,7 @@ with image %s ===============================`, clusterName, imageRefName)
 						if m, ok := metadata.(map[string]interface{}); ok {
 							if name, ok := m["name"]; ok {
 								strName := fmt.Sprintf("%v", name)
+								klog.V(1).Infof("Cluster %s: Add imageset: %s", clusterName, strName)
 								imageSets = append(imageSets, strName)
 							}
 						}
@@ -225,8 +225,12 @@ with image %s ===============================`, clusterName, imageRefName)
 				}
 
 				sort.Strings(imageSets)
-				if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
-					imageRefName = imageSets[len(imageSets)-1]
+				if len(imageSets) > 0 {
+					if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
+						imageRefName = imageSets[len(imageSets)-1]
+					}
+				} else {
+					klog.Error("ClusterImageSets length is zero, probably an OCP issue")
 				}
 			}
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
@@ -560,21 +564,5 @@ func waitDetroyed(hubClientDynamic dynamic.Interface, clusterName string) {
 			return false
 		}, 3600, 60).Should(BeTrue())
 		klog.V(1).Infof("Cluster %s: %s clusterDeployment deleted", clusterName, clusterName)
-	})
-}
-
-func waitNamespaceDeleted(hubClient kubernetes.Interface, clusterName string) {
-	By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
-		klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
-		Eventually(func() bool {
-			klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
-			_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
-			if err != nil {
-				klog.V(1).Info(err)
-				return errors.IsNotFound(err)
-			}
-			return false
-		}, 3600, 60).Should(BeTrue())
-		klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
 	})
 }

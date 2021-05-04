@@ -16,8 +16,12 @@ import (
 	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
 	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 )
 
@@ -63,6 +67,10 @@ func destroyCluster(cloud, vendor string) {
 				}
 			}
 		}
+		if len(clusterName) == 0 {
+			Fail(fmt.Sprintf("No cluster for Cloud provider %s to delete", cloud))
+		}
+
 		if cloud == "baremetal" {
 			clusterName = libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterName
 		}
@@ -146,11 +154,35 @@ func destroyCluster(cloud, vendor string) {
 		})
 
 		When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
-			waitNamespaceDeleted(hubClient, clusterName)
+			waitNamespaceDeleted(hubClient, hubClientDynamic, hubClientDiscovery, clusterName)
 		})
 
 		klog.V(1).Infof("========================= End Test destroy cluster %s ===============================", clusterName)
 
 	})
 
+}
+
+func waitNamespaceDeleted(
+	hubClient kubernetes.Interface,
+	hubClientDynamic dynamic.Interface,
+	hubClientDiscovery *discovery.DiscoveryClient,
+	clusterName string) {
+	By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
+		klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
+		Eventually(func() bool {
+			klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
+			_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
+			if err != nil {
+				klog.V(1).Info(err)
+				return errors.IsNotFound(err)
+			}
+			err = printLeftOver(hubClientDynamic, hubClientDiscovery, clusterName)
+			if err != nil {
+				klog.Error(err)
+			}
+			return false
+		}, 3600, 60).Should(BeTrue())
+		klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
+	})
 }

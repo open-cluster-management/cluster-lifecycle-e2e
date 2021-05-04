@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -94,6 +95,7 @@ var hubRestConfig *rest.Config
 var hubClientClient client.Client
 var hubClient kubernetes.Interface
 var hubClientDynamic dynamic.Interface
+var hubClientDiscovery *discovery.DiscoveryClient
 var hubClientAPIExtension clientset.Interface
 var createTemplateProcessor *templateprocessor.TemplateProcessor
 var hubCreateApplier *libgoapplier.Applier
@@ -110,6 +112,8 @@ var _ = BeforeSuite(func() {
 	hubClient, err = libgoclient.NewKubeClient(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
 	hubClientDynamic, err = libgoclient.NewKubeClientDynamic(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
+	Expect(err).To(BeNil())
+	hubClientDiscovery, err = discovery.NewDiscoveryClientForConfig(hubRestConfig)
 	Expect(err).To(BeNil())
 	hubClientAPIExtension, err = libgoclient.NewKubeClientAPIExtension(libgooptions.TestOptions.Options.Hub.MasterURL, libgooptions.TestOptions.Options.Hub.KubeConfig, libgooptions.TestOptions.Options.Hub.KubeContext)
 	Expect(err).To(BeNil())
