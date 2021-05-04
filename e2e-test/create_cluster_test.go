@@ -217,6 +217,7 @@ with image %s ===============================`, clusterName, imageRefName)
 						if m, ok := metadata.(map[string]interface{}); ok {
 							if name, ok := m["name"]; ok {
 								strName := fmt.Sprintf("%v", name)
+								klog.V(1).Infof("Cluster %s: Add imageset: %s", clusterName, strName)
 								imageSets = append(imageSets, strName)
 							}
 						}
