@@ -225,8 +225,12 @@ with image %s ===============================`, clusterName, imageRefName)
 				}
 
 				sort.Strings(imageSets)
-				if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
-					imageRefName = imageSets[len(imageSets)-1]
+				if len(imageSets) > 0 {
+					if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
+						imageRefName = imageSets[len(imageSets)-1]
+					}
+				} else {
+					klog.Error("ClusterImageSets length is zero, probably an OCP issue")
 				}
 			}
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
