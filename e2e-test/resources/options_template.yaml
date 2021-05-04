@@ -15,7 +15,7 @@ options:
   clusters:
   - name: IMPORT_CLUSTER_NAME
     baseDomain: IMPORT_CLUSTER_BASE_DOMAIN
-    kubecontext: IMPORT_CLUSTER_KUBE_CONTEXT 
+    kubeconfig: IMPORT_CLUSTER_KUBE_CONFIG
   #ocpReleaseVersion: quay.io/openshift-release-dev/ocp-release:4.5.15-x86_64
   cloudConnection:
     pullSecret: |-

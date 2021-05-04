@@ -35,11 +35,17 @@ $ cp e2e-test/resources/options.yaml.template e2e-test/resources/options.yaml
 
 3. run testing:
 
+From the project root:
 ```
 $ export KUBECONFIG=~/.kube/config
-$ ginkgo -v -p -stream -- -options=e2e-test/resources/options.yaml -v=3
+$ ginkgo -v -p -stream -tags e2e e2e-test -- -options=resources/options.yaml -v=3
 ```
 
+You can run a specific test by adding the `focus` parameter, for example:
+
+```
+ginkgo -v -p -stream -focus "import" -tags e2e e2e-test -- -options=resources/options.yaml -v=3
+```
 ## Running with Docker
 
 1. clone this repo:
@@ -55,37 +61,39 @@ $ cd cluster-lifecycle-e2e
 $ cp e2e-test/resources/options_template.yaml e2e-test/resources/options.yaml
 ```
 
-3. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
+3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to e2e-test/resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
+
+4. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
 
 ```
 $ kubectl config current-context
 open-cluster-management/api-demo-dev02-red-chesterfield-com:6443/kube:admin
 ```
 
-4. Set env variables `GITHUB_USER` and `GITHUB_TOKEN` and Run `make deps`. This will download necessary dependencies
+5. Set env variables `GITHUB_USER` and `GITHUB_TOKEN` and Run `make deps`. This will download necessary dependencies
 
 ```
 $ make deps
 ```
 
-5. Run `make build`. This will create a docker image:
+6. Run `make build`. This will create a docker image:
 
 ```
 $ make build
 ```
 
-6. run the following command to get docker image ID, we will use this in the next step:
+7. run the following command to get docker image ID, we will use this in the next step:
 
 ```
-$ EXPORT docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
+$ export docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
 ```
 
-7. run testing:
+8. run testing:
 
 TEST_GROUP values can be
 - import -> to import an existing cluster
 - provision-all -> to provision aws, gcp, azure clusters in parallel
-- destroy -> to deatch an existing imported cluster and destroy provisioned cluster
+- destroy -> to deatch an existing imported clusters and destroy provisioned cluster
 - metrics -> to test the clusterlifecycle metrics from prometheus
 - create-baremetal -> to provision baremetal cluster
 - destroy-baremetal -> to destroy baremetal cluster
