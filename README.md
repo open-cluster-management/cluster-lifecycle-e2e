@@ -27,10 +27,10 @@ The tests in this container will:
 $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 ```
 
-2. copy `e2e-test/resources/options.yaml.template` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
+2. copy `pkg/resources/options.yaml.template` to `pkg/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp e2e-test/resources/options.yaml.template e2e-test/resources/options.yaml
+$ cp pkg/resources/options.yaml.template pkg/resources/options.yaml
 ```
 
 3. run testing:
@@ -38,14 +38,19 @@ $ cp e2e-test/resources/options.yaml.template e2e-test/resources/options.yaml
 From the project root:
 ```
 $ export KUBECONFIG=~/.kube/config
-$ ginkgo -v -p -stream -tags e2e e2e-test -- -options=resources/options.yaml -v=3
+$ ginkgo -v -p -stream pkg/tests/<test_package_name> -- -options=../resources/options.yaml -v=3
+```
+for example:
+```
+ginkgo -v -p -stream pkg/tests/metrics -- -options=../resources/options.yaml -v=3
 ```
 
 You can run a specific test by adding the `focus` parameter, for example:
 
 ```
-ginkgo -v -p -stream -focus "import" -tags e2e e2e-test -- -options=resources/options.yaml -v=3
+ginkgo -v -p -focus="import" -stream pkg/tests/import -- -options=../resources/options.yaml -v=3
 ```
+
 ## Running with Docker
 
 1. clone this repo:
@@ -58,7 +63,7 @@ $ cd cluster-lifecycle-e2e
 2. copy `e2e-test/resources/options_template.yaml` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp e2e-test/resources/options_template.yaml e2e-test/resources/options.yaml
+$ cp pkg/resources/options_template.yaml pkg/resources/options.yaml
 ```
 
 3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to e2e-test/resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
@@ -98,10 +103,10 @@ TEST_GROUP values can be
 - create-baremetal -> to provision baremetal cluster
 - destroy-baremetal -> to destroy baremetal cluster
 
-For import test, save kubeconfig of cluster to be imported in path `$(pwd)/e2e-test/resources/import/kubeconfig`
+For import test, save kubeconfig of cluster to be imported in path `$(pwd)/pkg/resources/import/kubeconfig`
 
 ```
-$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/e2e-test/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/e2e-test/resources:/resources -v $(pwd)/e2e-test/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
+$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/pkg/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/pkg/resources:/resources -v $(pwd)/pkg/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
 ```
 
 In Canary environment, this is the container that will be run - and all the volumes etc will passed on while starting the docker container using a helper script.

@@ -1,8 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-// +build e2e
-
-package e2e
+package metrics
 
 import (
 	"context"
@@ -20,6 +18,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/tests/options"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
 )
 
 const (
@@ -50,11 +51,13 @@ type metric struct {
 	Instance string `json:"instance"`
 }
 
+var hubClients *clients.HubClients
+
 var prometheusQueryURL string
 
 var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics", func() {
 	BeforeEach(func() {
-		prometheusQueryURL = fmt.Sprintf("%s.%s/%s", prometheusServiceURL, baseDomain, metricQueryURI)
+		prometheusQueryURL = fmt.Sprintf("%s.%s/%s", prometheusServiceURL, options.BaseDomain, metricQueryURI)
 		SetDefaultEventuallyTimeout(1 * time.Minute)
 		SetDefaultEventuallyPollingInterval(10 * time.Second)
 	})
@@ -63,7 +66,7 @@ var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics
 		clusterName := "local-cluster"
 		klog.V(1).Infof("========================= Test cluster metrics hub %s ===============================", clusterName)
 		By(fmt.Sprintf("Checking cluster %s to be ready", clusterName), func() {
-			waitClusterImported(hubClientDynamic, clusterName)
+			utils.WaitClusterImported(hubClients.DynamicClient, clusterName)
 		})
 
 		var clusterID string
@@ -73,7 +76,7 @@ var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics
 				Version:  "v1beta1",
 				Resource: "managedclusterinfos",
 			}
-			managedClusterInfo, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
+			managedClusterInfo, err := hubClients.DynamicClient.Resource(gvr).Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			if v, ok := managedClusterInfo.Object["status"]; ok {
 				status := v.(map[string]interface{})
@@ -131,12 +134,12 @@ func getMetricsQuery(queryExpression string) (resp *http.Response, body []byte, 
 		return
 	}
 
-	bearerToken := hubRestConfig.BearerToken
+	bearerToken := hubClients.RestConfig.BearerToken
 	req.Header.Add("Authorization", "Bearer "+bearerToken)
 
 	//Set true to insecureSkipVerify if kube config is set so
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: hubRestConfig.Insecure},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: hubClients.RestConfig.Insecure},
 	}
 
 	client := http.Client{Transport: tr}
