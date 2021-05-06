@@ -12,6 +12,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-cluster-management/applier/pkg/applier"
@@ -26,6 +29,12 @@ import (
 
 	"k8s.io/klog"
 )
+
+const (
+	_v1APIExtensionKubeMinVersion = "v1.16.0"
+)
+
+var v1APIExtensionMinVersion = version.MustParseGeneric(_v1APIExtensionKubeMinVersion)
 
 var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluster", func() {
 	var hubClients *clients.HubClients
@@ -123,8 +132,14 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 			By("Launching the manual import", func() {
 				klog.V(1).Infof("Cluster %s: Apply the crds.yaml", clusterName)
 				klog.V(5).Infof("Cluster %s: importSecret.Data[crds.yaml]: %s\n", clusterName, importSecret.Data["crds.yaml"])
-				//TODO v1/v1beta1
-				importStringReader := templateprocessor.NewYamlStringReader(string(importSecret.Data["crds.yaml"]), templateprocessor.KubernetesYamlsDelimiterString)
+				isV1, err := isAPIExtensionV1(managedCluster.KubeConfig)
+				Expect(err).To(BeNil())
+				var importStringReader *templateprocessor.YamlStringReader
+				if isV1 {
+					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["v1"]), templateprocessor.KubernetesYamlsDelimiterString)
+				} else {
+					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["v1beta1"]), templateprocessor.KubernetesYamlsDelimiterString)
+				}
 				managedClusterApplier, err := applier.NewApplier(importStringReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, nil)
 				Expect(err).To(BeNil())
 				Expect(managedClusterApplier.CreateOrUpdateInPath(".", nil, false, nil)).NotTo(HaveOccurred())
@@ -161,3 +176,35 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 	})
 
 })
+
+func isAPIExtensionV1(kubeConfig string) (bool, error) {
+
+	config, err := clientcmd.LoadFromFile(kubeConfig)
+	if err != nil {
+		return false, err
+	}
+
+	rconfig, err := clientcmd.NewDefaultClientConfig(
+		*config,
+		&clientcmd.ConfigOverrides{}).ClientConfig()
+	if err != nil {
+		return false, err
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(rconfig)
+	if err != nil {
+		return false, err
+	}
+
+	//Search the kubernestes version by connecting to the managed cluster
+	kubeVersion, err := kubeClient.ServerVersion()
+	if err != nil {
+		return false, err
+	}
+	isV1, err := v1APIExtensionMinVersion.Compare(kubeVersion.String())
+	if err != nil {
+		return false, err
+	}
+	klog.V(4).Infof("isV1: %t", isV1 == -1)
+	return isV1 == -1, nil
+}
