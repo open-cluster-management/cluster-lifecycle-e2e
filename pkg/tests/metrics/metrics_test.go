@@ -36,7 +36,7 @@ type queryResponse struct {
 }
 
 type data struct {
-	ResultType string   `json:"resultType`
+	ResultType string   `json:"resultType"`
 	Result     []result `json:"result"`
 }
 
