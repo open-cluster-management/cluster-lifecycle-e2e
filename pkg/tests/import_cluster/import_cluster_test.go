@@ -131,14 +131,15 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 
 			By("Launching the manual import", func() {
 				klog.V(1).Infof("Cluster %s: Apply the crds.yaml", clusterName)
-				klog.V(5).Infof("Cluster %s: importSecret.Data[crds.yaml]: %s\n", clusterName, importSecret.Data["crds.yaml"])
 				isV1, err := isAPIExtensionV1(managedCluster.KubeConfig)
 				Expect(err).To(BeNil())
 				var importStringReader *templateprocessor.YamlStringReader
 				if isV1 {
-					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["v1"]), templateprocessor.KubernetesYamlsDelimiterString)
+					klog.V(5).Infof("Cluster %s: importSecret.Data[v1]: %s\n", clusterName, importSecret.Data["crdsv1.yaml"])
+					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["crdsv1.yaml"]), templateprocessor.KubernetesYamlsDelimiter)
 				} else {
-					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["v1beta1"]), templateprocessor.KubernetesYamlsDelimiterString)
+					klog.V(5).Infof("Cluster %s: importSecret.Data[v1beta1]: %s\n", clusterName, importSecret.Data["crdsv1beta1.yaml"])
+					importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["crdsv1beta1.yaml"]), templateprocessor.KubernetesYamlsDelimiter)
 				}
 				managedClusterApplier, err := applier.NewApplier(importStringReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, nil)
 				Expect(err).To(BeNil())
@@ -147,7 +148,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 				time.Sleep(2 * time.Second)
 				klog.V(1).Infof("Cluster %s: Apply the import.yaml", clusterName)
 				klog.V(5).Infof("Cluster %s: importSecret.Data[import.yaml]: %s\n", clusterName, importSecret.Data["import.yaml"])
-				importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["import.yaml"]), templateprocessor.KubernetesYamlsDelimiterString)
+				importStringReader = templateprocessor.NewYamlStringReader(string(importSecret.Data["import.yaml"]), templateprocessor.KubernetesYamlsDelimiter)
 				managedClusterApplier, err = applier.NewApplier(importStringReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, nil)
 				Expect(err).To(BeNil())
 				Expect(managedClusterApplier.CreateOrUpdateInPath(".", nil, false, nil)).NotTo(HaveOccurred())
