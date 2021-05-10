@@ -250,6 +250,7 @@ with image %s ===============================`, clusterName, imageRefName)
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
 				imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			}
+			Expect(imageRefName).NotTo(Equal(""))
 		})
 
 		By("creating the clusterDeployment", func() {
