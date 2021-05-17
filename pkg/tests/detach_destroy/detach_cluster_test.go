@@ -1,8 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-// +build e2e
-
-package e2e
+package detach_destroy
 
 import (
 	"context"
@@ -18,6 +16,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
 	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
 	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
 	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
@@ -30,34 +30,19 @@ import (
 var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluster", func() {
 
 	var err error
-	//var managedClustersForManualImport map[string]string
-	//var managedClusterClient client.Client
 	var managedClusterKubeClient kubernetes.Interface
 	var managedClusterDynamicClient dynamic.Interface
 	var managedClusterDiscoveryClient *discovery.DiscoveryClient
-	//var managedClusterApplier *libgoapplier.Applier
+	var hubClients *clients.HubClients
 
-	// BeforeEach(func() {
-	// 	managedClustersForManualImport, err = libgooptions.GetManagedClusterKubeConfigs(libgooptions.TestOptions.ManagedClusters.ConfigDir, importClusterScenario)
-	// 	Expect(err).To(BeNil())
-	// 	if len(managedClustersForManualImport) == 0 {
-	// 		Skip("Manual import not executed because no managed cluster defined for import")
-	// 	}
-	// 	SetDefaultEventuallyTimeout(15 * time.Minute)
-	// 	SetDefaultEventuallyPollingInterval(10 * time.Second)
-	// })
+	BeforeEach(func() {
+		hubClients = clients.GetHubClients()
+	})
 
 	It("Given a list of clusters to detach (cluster/g0/detach-service-resources)", func() {
-		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
 		for _, managedCluster := range libgooptions.TestOptions.Options.ManagedClusters {
 			var clusterName = managedCluster.Name
 			klog.V(1).Infof("========================= Test cluster detach cluster %s ===============================", managedCluster.Name)
-			// managedClusterClient, err = libgoclient.NewClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext, client.Options{})
-			// Expect(err).To(BeNil())
-			// managedClusterApplier, err = libgoapplier.NewApplier(importYamlReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, libgoapplier.DefaultKubernetesMerger, nil)
-			// Expect(err).To(BeNil())
-			// managedClusterKubeClient, err = libgoclient.NewKubeClient(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
-			// Expect(err).To(BeNil())
 			managedClusterKubeClient, err = libgoclient.NewDefaultKubeClient(managedCluster.KubeConfig)
 			Expect(err).To(BeNil())
 			managedClusterDynamicClient, err = libgoclient.NewDefaultKubeClientDynamic(managedCluster.KubeConfig)
@@ -66,11 +51,9 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			Expect(err).To(BeNil())
 			managedClusterDiscoveryClient, err = discovery.NewDiscoveryClientForConfig(managedClusterRestConfig)
 			Expect(err).To(BeNil())
-			// managedClusterDynamicClient, err = libgoclient.NewKubeClientDynamic(managedCluster.MasterURL, managedCluster.KubeConfig, managedCluster.KubeContext)
-			// Expect(err).To(BeNil())
 			Eventually(func() bool {
 				klog.V(1).Infof("Cluster %s: Check CRDs", clusterName)
-				has, _, _ := libgocrdv1.HasCRDs(hubClientAPIExtension,
+				has, _, _ := libgocrdv1.HasCRDs(hubClients.APIExtensionClient,
 					[]string{
 						"managedclusters.cluster.open-cluster-management.io",
 						"manifestworks.work.open-cluster-management.io",
@@ -80,7 +63,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			}).Should(BeTrue())
 
 			Eventually(func() error {
-				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
+				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
 					"open-cluster-management",
 					[]string{
 						"managedcluster-import-controller-v2",
@@ -90,7 +73,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			}).Should(BeNil())
 
 			Eventually(func() error {
-				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
+				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
 					"open-cluster-management-hub",
 					[]string{"cluster-manager-registration-controller"})
 				return err
@@ -99,14 +82,14 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 			By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
 				klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
 				gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
-				Expect(hubClientDynamic.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
+				Expect(hubClients.DynamicClient.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
 			})
 
 			klog.V(1).Infof("Cluster %s: Wait 20 min for cluster to go in Unknown state", clusterName)
 			time.Sleep(20 * time.Minute)
 
 			When(fmt.Sprintf("the detach of the cluster %s is requested, wait for the effective detach", clusterName), func() {
-				waitDetached(hubClientDynamic, clusterName)
+				waitDetached(hubClients.DynamicClient, clusterName)
 			})
 
 			When("the namespace is deleted, check if managed cluster is well cleaned", func() {
@@ -119,7 +102,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
 							return errors.IsNotFound(err)
 						}
-						err = printLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentAddonNamespace)
+						err = utils.PrintLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentAddonNamespace)
 						if err != nil {
 							klog.Error(err)
 						}
@@ -135,7 +118,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
 							return errors.IsNotFound(err)
 						}
-						err = printLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentNamespace)
+						err = utils.PrintLeftOver(managedClusterDynamicClient, managedClusterDiscoveryClient, openClusterManagementAgentNamespace)
 						if err != nil {
 							klog.Error(err)
 						}
@@ -162,12 +145,12 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 					klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
 					Eventually(func() bool {
 						klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
-						_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
+						_, err := hubClients.KubeClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
 						if err != nil {
 							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
 							return errors.IsNotFound(err)
 						}
-						err = printLeftOver(hubClientDynamic, hubClientDiscovery, clusterName)
+						err = utils.PrintLeftOver(hubClients.DynamicClient, hubClients.DiscoveryClient, clusterName)
 						if err != nil {
 							klog.Error(err)
 						}
@@ -183,44 +166,19 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 
 })
 
-func printLeftOver(dynamicClient dynamic.Interface, discoveryClient *discovery.DiscoveryClient, ns string) error {
-	klog.Infof("==================== Left Over in %s ======================", ns)
-	_, err := dynamicClient.Resource(schema.GroupVersionResource{
-		Version:  "v1",
-		Resource: "namespaces",
-	}).Get(context.TODO(), ns, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		} else {
-			return err
-		}
-	}
-	apiResourceLists, err := discoveryClient.ServerPreferredNamespacedResources()
-	if err != nil {
-		return err
-	}
-	for _, apiResourceList := range apiResourceLists {
-		for _, apiResource := range apiResourceList.APIResources {
-			us, err := dynamicClient.Resource(
-				schema.GroupVersionResource{
-					Group:    apiResourceList.GroupVersionKind().Group,
-					Version:  apiResourceList.GroupVersion,
-					Resource: apiResource.Name,
-				}).Namespace(ns).List(context.TODO(), metav1.ListOptions{})
+func waitDetached(hubClientDynamic dynamic.Interface, clusterName string) {
+	By(fmt.Sprintf("Checking the deletion of the %s managedCluster on the hub", clusterName), func() {
+		klog.V(1).Infof("Cluster %s: Checking the deletion of the %s managedCluster on the hub", clusterName, clusterName)
+		gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
+		Eventually(func() bool {
+			klog.V(1).Infof("Cluster %s: Wait %s managedCluster deletion...", clusterName, clusterName)
+			_, err := hubClientDynamic.Resource(gvr).Get(context.TODO(), clusterName, metav1.GetOptions{})
 			if err != nil {
-				if !errors.IsNotFound(err) {
-					klog.Errorf("Group: %s, Version: %s, Resource: %s Error: %s",
-						apiResourceList.GroupVersionKind().Group,
-						apiResourceList.GroupVersion,
-						apiResource.Name, err)
-				}
-				continue
+				klog.V(4).Infof("Cluster %s: %s", clusterName, err)
+				return errors.IsNotFound(err)
 			}
-			for _, u := range us.Items {
-				klog.Infof("Kind: %s, Name: %s", u.GetKind(), u.GetName())
-			}
-		}
-	}
-	return nil
+			return false
+		}).Should(BeTrue())
+		klog.V(1).Infof("Cluster %s: %s managedCluster deleted", clusterName, clusterName)
+	})
 }

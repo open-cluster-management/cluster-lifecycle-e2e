@@ -1,8 +1,4 @@
-// Copyright (c) 2020 Red Hat, Inc.
-
-// +build e2e
-
-package e2e
+package utils
 
 import (
 	"context"
@@ -13,65 +9,83 @@ import (
 	"strings"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-cluster-management/applier/pkg/applier"
+	"github.com/open-cluster-management/applier/pkg/templateprocessor"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/appliers"
+	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
 	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
 	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
 	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
-	libgoapplier "github.com/open-cluster-management/library-go/pkg/applier"
-	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
-
-	"k8s.io/client-go/dynamic"
-	"k8s.io/klog"
+	libgounstructuredv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/unstructured"
 )
 
-type Hosts struct {
-	Name            string
-	Namespace       string
-	Role            string
-	Bmc             BMC
-	BootMACAddress  string
-	HardwareProfile string
+// list of manifestwork name for addon crs
+var managedClusteraddOns = []string{
+	"application-manager",
+	"cert-policy-controller",
+	"iam-policy-controller",
+	"policy-controller",
+	"search-collector",
+	"work-manager",
 }
 
-// BMC ...
-type BMC struct {
-	address                        string
-	disableCertificateVerification bool
-	username                       string
-	password                       string
+func WaitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
+	Eventually(func() error {
+		klog.V(1).Infof("Cluster %s: Wait %s to be imported...", clusterName, clusterName)
+		return checkClusterImported(hubClientDynamic, clusterName)
+	}).Should(BeNil())
+	klog.V(1).Infof("Cluster %s: imported", clusterName)
 }
 
-var _ = Describe("Cluster-lifecycle: ", func() {
-	createCluster("aws", "OpenShift")
-})
+func checkClusterImported(hubClientDynamic dynamic.Interface, clusterName string) error {
+	klog.V(1).Infof("Cluster %s: Check %s is imported...", clusterName, clusterName)
+	gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
+	managedCluster, err := hubClientDynamic.Resource(gvr).Get(context.TODO(), clusterName, metav1.GetOptions{})
+	if err != nil {
+		klog.V(4).Info(err)
+		return err
+	}
+	var condition map[string]interface{}
+	condition, err = libgounstructuredv1.GetConditionByType(managedCluster, "ManagedClusterConditionAvailable")
+	if err != nil {
+		return err
+	}
+	klog.V(4).Infof("Cluster %s: Condition %#v", clusterName, condition)
+	if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
+		return nil
+	} else {
+		klog.V(4).Infof("Cluster %s: Current is not equal to \"%s\" but \"%v\"", clusterName, metav1.ConditionTrue, v)
+		return fmt.Errorf("status is %s", v)
+	}
+}
 
-var _ = Describe("Cluster-lifecycle: ", func() {
-	createCluster("azure", "OpenShift")
-})
-
-var _ = Describe("Cluster-lifecycle: ", func() {
-	createCluster("gcp", "OpenShift")
-})
-var _ = Describe("Cluster-lifecycle: ", func() {
-	createCluster("baremetal", "OpenShift")
-})
-
-func createCluster(cloud, vendor string) {
+func CreateCluster(cloud, vendor, cloudProviders string) {
 	var clusterNameObj *libgooptions.ClusterName
 	var clusterName string
 	var err error
 	var imageRefName string
+	var hubAppliers *appliers.HubAppliers
+	var hubClients *clients.HubClients
 
 	BeforeEach(func() {
-		if cloudProviders != "" && !isRequestedCloudProvider(cloud) {
+		hubClients = clients.GetHubClients()
+		hubAppliers = appliers.GetHubAppliers(hubClients)
+		if cloudProviders != "" && !isRequestedCloudProvider(cloud, cloudProviders) {
 			Skip(fmt.Sprintf("Cloud provider %s skipped", cloud))
 		}
 		clusterNameObj, err = libgooptions.NewClusterName(cloud)
@@ -95,7 +109,7 @@ with image %s ===============================`, clusterName, imageRefName)
 			klog.V(1).Infof("Cluster %s: Checking the minimal requirements", clusterName)
 			Eventually(func() bool {
 				klog.V(2).Infof("Cluster %s: Check CRDs", clusterName)
-				has, missing, _ := libgocrdv1.HasCRDs(hubClientAPIExtension,
+				has, missing, _ := libgocrdv1.HasCRDs(hubClients.APIExtensionClient,
 					[]string{
 						"managedclusters.cluster.open-cluster-management.io",
 						"clusterdeployments.hive.openshift.io",
@@ -108,7 +122,7 @@ with image %s ===============================`, clusterName, imageRefName)
 			}).Should(BeTrue())
 
 			Eventually(func() bool {
-				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
 					"open-cluster-management",
 					[]string{
 						"managedcluster-import-controller-v2",
@@ -120,7 +134,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				return has
 			}).Should(BeTrue())
 			Eventually(func() bool {
-				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
 					"open-cluster-management-hub",
 					[]string{"cluster-manager-registration-controller"})
 				if !has {
@@ -129,7 +143,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				return has
 			}).Should(BeTrue())
 			Eventually(func() bool {
-				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClient,
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
 					"hive",
 					[]string{"hive-controllers"})
 				if !has {
@@ -143,7 +157,7 @@ with image %s ===============================`, clusterName, imageRefName)
 		By("creating the namespace in which the cluster will be imported", func() {
 			//Create the cluster NS on master
 			klog.V(1).Infof("Cluster %s: Creating the namespace in which the cluster will be imported", clusterName)
-			namespaces := hubClient.CoreV1().Namespaces()
+			namespaces := hubClients.KubeClient.CoreV1().Namespaces()
 			_, err := namespaces.Get(context.TODO(), clusterName, metav1.GetOptions{})
 			if err != nil {
 				if errors.IsNotFound(err) {
@@ -162,7 +176,7 @@ with image %s ===============================`, clusterName, imageRefName)
 		By("Creating the needed resources", func() {
 			klog.V(1).Infof("Cluster %s: Creating the needed resources", clusterName)
 			pullSecret := &corev1.Secret{}
-			Expect(hubClientClient.Get(context.TODO(),
+			Expect(hubClients.ClientClient.Get(context.TODO(),
 				types.NamespacedName{
 					Name:      "pull-secret",
 					Namespace: "openshift-config",
@@ -181,7 +195,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterSSHPrivateKey: libgooptions.TestOptions.Options.CloudConnection.SSHPrivateKey,
 				ManagedClusterPullSecret:    string(pullSecret.Data[".dockerconfigjson"]),
 			}
-			Expect(hubCreateApplier.CreateOrUpdateInPath(".",
+			Expect(hubAppliers.CreateApplier.CreateOrUpdateInPath(".",
 				[]string{
 					"install_config_secret_cr.yaml",
 					"cluster_deployment_cr.yaml",
@@ -194,21 +208,21 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			if cloud != "baremetal" {
 				klog.V(1).Infof("Cluster %s: Creating the %s cred secret", clusterName, cloud)
-				Expect(createCredentialsSecret(hubCreateApplier, clusterName, cloud)).To(BeNil())
+				Expect(createCredentialsSecret(hubAppliers.CreateApplier, clusterName, cloud)).To(BeNil())
 			}
 
 			klog.V(1).Infof("Cluster %s: Creating install config secret", clusterName)
-			Expect(createInstallConfig(hubCreateApplier, createTemplateProcessor, clusterName, cloud)).To(BeNil())
+			Expect(createInstallConfig(hubAppliers.CreateApplier, hubAppliers.CreateTemplateProcessor, clusterName, cloud)).To(BeNil())
 
 			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud != "baremetal" {
-				imageRefName, err = createClusterImageSet(hubCreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
+				imageRefName, err = createClusterImageSet(hubAppliers.CreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
 				Expect(err).To(BeNil())
 				//imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			} else {
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
-				imagesetsList, err := hubClientDynamic.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+				imagesetsList, err := hubClients.DynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 				Expect(err).To(BeNil())
 				var imageSets []string
 
@@ -236,6 +250,7 @@ with image %s ===============================`, clusterName, imageRefName)
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
 				imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			}
+			Expect(imageRefName).NotTo(Equal(""))
 		})
 
 		By("creating the clusterDeployment", func() {
@@ -269,19 +284,19 @@ with image %s ===============================`, clusterName, imageRefName)
 				Hosts:                       libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.Hosts,
 			}
 			klog.V(1).Infof("Cluster %s: Creating the clusterDeployment", clusterName)
-			Expect(hubCreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
+			Expect(hubAppliers.CreateApplier.CreateOrUpdateResource("cluster_deployment_cr.yaml", values)).To(BeNil())
 		})
 
 		By("Attaching the cluster by creating the managedCluster and klusterletaddonconfig", func() {
-			createManagedCluster(hubCreateApplier, clusterName, cloud, vendor)
-			createKlusterletAddonConfig(hubCreateApplier, clusterName, cloud, vendor)
+			createManagedCluster(hubAppliers.CreateApplier, clusterName, cloud, vendor)
+			createKlusterletAddonConfig(hubAppliers.CreateApplier, clusterName, cloud, vendor)
 		})
 
 		When("Import launched, wait for cluster to be installed", func() {
 			gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
 			Eventually(func() error {
 				klog.V(1).Infof("Cluster %s: Wait %s to be installed...", clusterName, clusterName)
-				clusterDeployment, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
+				clusterDeployment, err := hubClients.DynamicClient.Resource(gvr).Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
 				if err == nil {
 					if si, ok := clusterDeployment.Object["status"]; ok {
 						s := si.(map[string]interface{})
@@ -289,7 +304,7 @@ with image %s ===============================`, clusterName, imageRefName)
 							return nil
 						}
 					}
-					return fmt.Errorf("No status available")
+					return fmt.Errorf("no status available")
 				} else {
 					klog.V(4).Info(err)
 				}
@@ -299,12 +314,12 @@ with image %s ===============================`, clusterName, imageRefName)
 		})
 
 		When(fmt.Sprintf("Import launched, wait for cluster %s to be ready", clusterName), func() {
-			waitClusterImported(hubClientDynamic, clusterName)
+			waitClusterImported(hubClients.DynamicClient, clusterName)
 		})
 
 		if cloud != "baremetal" {
 			When("Imported, validate...", func() {
-				validateClusterImported(hubClientDynamic, hubClient, clusterName)
+				validateClusterImported(hubClients.DynamicClient, hubClients.KubeClient, clusterName)
 			})
 		}
 
@@ -313,7 +328,7 @@ with image %s ===============================`, clusterName, imageRefName)
 
 		if cloud != "baremetal" {
 			When(fmt.Sprintf("Import launched, wait for Add-Ons %s to be available", clusterName), func() {
-				waitClusterAdddonsAvailable(hubClientDynamic, clusterName)
+				WaitClusterAdddonsAvailable(hubClients.DynamicClient, clusterName)
 			})
 		}
 
@@ -323,7 +338,7 @@ with image %s ===============================`, clusterName, imageRefName)
 
 }
 
-func isRequestedCloudProvider(cloud string) bool {
+func isRequestedCloudProvider(cloud, cloudProviders string) bool {
 	cloudProviderstSlice := strings.Split(cloudProviders, ",")
 	klog.V(5).Infof("cloudProviderSlice %v", cloudProviderstSlice)
 	for _, cloudProvider := range cloudProviderstSlice {
@@ -336,7 +351,7 @@ func isRequestedCloudProvider(cloud string) bool {
 	return false
 }
 
-func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName, cloud string) error {
+func createCredentialsSecret(hubCreateApplier *applier.Applier, clusterName, cloud string) error {
 	switch cloud {
 	case "aws":
 		cloudCredSecretValues := struct {
@@ -363,7 +378,7 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			ManagedClusterTenantId:       libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.TenantID,
 			ManagedClusterSubscriptionId: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.SubscriptionID,
 		}
-		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
+		return hubCreateApplier.CreateOrUpdateResource(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	case "gcp":
 		cloudCredSecretValues := struct {
 			ManagedClusterName      string
@@ -372,15 +387,15 @@ func createCredentialsSecret(hubCreateApplier *libgoapplier.Applier, clusterName
 			ManagedClusterName:      clusterName,
 			GCPOSServiceAccountJson: libgooptions.TestOptions.Options.CloudConnection.APIKeys.GCP.ServiceAccountJSONKey,
 		}
-		return hubCreateApplier.CreateOrUpdateAsset(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
+		return hubCreateApplier.CreateOrUpdateResource(filepath.Join(cloud, "creds_secret_cr.yaml"), cloudCredSecretValues)
 	// case "baremetal":
 	// 	return fmt.Println("baremetal")
 	default:
-		return fmt.Errorf("Unsupporter cloud %s", cloud)
+		return fmt.Errorf("unsupporter cloud %s", cloud)
 	}
 }
 
-func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
+func createInstallConfig(hubCreateApplier *applier.Applier,
 	createTemplateProcessor *templateprocessor.TemplateProcessor,
 	clusterName,
 	cloud string) error {
@@ -411,7 +426,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterRegion:       region,
 			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
-		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
+		b, err = createTemplateProcessor.TemplateResource(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "azure":
 		installConfigValues := struct {
 			ManagedClusterName          string
@@ -426,7 +441,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterRegion:        region,
 			ManagedClusterSSHPublicKey:  libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
-		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
+		b, err = createTemplateProcessor.TemplateResource(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "gcp":
 		installConfigValues := struct {
 			ManagedClusterName         string
@@ -441,7 +456,7 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			ManagedClusterRegion:       region,
 			ManagedClusterSSHPublicKey: libgooptions.TestOptions.Options.CloudConnection.SSHPublicKey,
 		}
-		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
+		b, err = createTemplateProcessor.TemplateResource(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	case "baremetal":
 		installConfigValues := struct {
 			ManagedClusterName             string
@@ -477,9 +492,9 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 			Hosts:                          libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.Hosts,
 		}
 
-		b, err = createTemplateProcessor.TemplateAsset(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
+		b, err = createTemplateProcessor.TemplateResource(filepath.Join(cloud, "install_config.yaml"), installConfigValues)
 	default:
-		return fmt.Errorf("Unsupporter cloud %s", cloud)
+		return fmt.Errorf("unsupporter cloud %s", cloud)
 
 	}
 	if err != nil {
@@ -492,10 +507,10 @@ func createInstallConfig(hubCreateApplier *libgoapplier.Applier,
 		ManagedClusterName:          clusterName,
 		ManagedClusterInstallConfig: base64.StdEncoding.EncodeToString(b),
 	}
-	return hubCreateApplier.CreateOrUpdateAsset("install_config_secret_cr.yaml", installConfigSecretValues)
+	return hubCreateApplier.CreateOrUpdateResource("install_config_secret_cr.yaml", installConfigSecretValues)
 }
 
-func createKlusterletAddonConfig(hubCreateApplier *libgoapplier.Applier, clusterName, cloud, vendor string) {
+func createKlusterletAddonConfig(hubCreateApplier *applier.Applier, clusterName, cloud, vendor string) {
 	By("creating the klusterletaddonconfig", func() {
 		values := struct {
 			ManagedClusterName   string
@@ -507,11 +522,11 @@ func createKlusterletAddonConfig(hubCreateApplier *libgoapplier.Applier, cluster
 			ManagedClusterVendor: vendor,
 		}
 		klog.V(1).Infof("Cluster %s: Creating the klusterletaddonconfig", clusterName)
-		Expect(hubCreateApplier.CreateOrUpdateAsset("klusterlet_addon_config_cr.yaml", values)).To(BeNil())
+		Expect(hubCreateApplier.CreateOrUpdateResource("klusterlet_addon_config_cr.yaml", values)).To(BeNil())
 	})
 }
 
-func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameObj *libgooptions.ClusterName, ocpImageRelease string) (string, error) {
+func createClusterImageSet(hubCreateApplier *applier.Applier, clusterNameObj *libgooptions.ClusterName, ocpImageRelease string) (string, error) {
 	ocpImageReleaseSlice := strings.Split(ocpImageRelease, ":")
 	if len(ocpImageReleaseSlice) != 2 {
 		return "", fmt.Errorf("OCPImageRelease malformed: %s (no tag)", ocpImageRelease)
@@ -527,14 +542,14 @@ func createClusterImageSet(hubCreateApplier *libgoapplier.Applier, clusterNameOb
 		OCPReleaseImage:     ocpImageRelease,
 	}
 	klog.V(1).Infof("Cluster %s: Creating the imageSetName %s", clusterNameObj, clusterImageSetName)
-	err := hubCreateApplier.CreateOrUpdateAsset("clusterimageset_cr.yaml", values)
+	err := hubCreateApplier.CreateOrUpdateResource("clusterimageset_cr.yaml", values)
 	if err != nil {
 		return "", err
 	}
 	return clusterImageSetName, nil
 }
 
-func createManagedCluster(hubCreateApplier *libgoapplier.Applier, clusterName, cloud, vendor string) {
+func createManagedCluster(hubCreateApplier *applier.Applier, clusterName, cloud, vendor string) {
 	By("creating the managedCluster and klusterletaddonconfig", func() {
 		values := struct {
 			ManagedClusterName   string
@@ -546,7 +561,7 @@ func createManagedCluster(hubCreateApplier *libgoapplier.Applier, clusterName, c
 			ManagedClusterVendor: vendor,
 		}
 		klog.V(1).Infof("Cluster %s: Creating the managedCluster", clusterName)
-		Expect(hubCreateApplier.CreateOrUpdateAsset("managed_cluster_cr.yaml", values)).To(BeNil())
+		Expect(hubCreateApplier.CreateOrUpdateResource("managed_cluster_cr.yaml", values)).To(BeNil())
 	})
 }
 
@@ -565,4 +580,275 @@ func waitDetroyed(hubClientDynamic dynamic.Interface, clusterName string) {
 		}, 3600, 60).Should(BeTrue())
 		klog.V(1).Infof("Cluster %s: %s clusterDeployment deleted", clusterName, clusterName)
 	})
+}
+
+func waitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
+	Eventually(func() error {
+		klog.V(1).Infof("Cluster %s: Wait %s to be imported...", clusterName, clusterName)
+		return checkClusterImported(hubClientDynamic, clusterName)
+	}).Should(BeNil())
+	klog.V(1).Infof("Cluster %s: imported", clusterName)
+}
+
+func validateClusterImported(hubClientDynamic dynamic.Interface, hubClient kubernetes.Interface, clusterName string) {
+	gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
+	clusterDeployment, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	var configSecretRef string
+	if si, ok := clusterDeployment.Object["spec"]; ok {
+		s := si.(map[string]interface{})
+		if ci, ok := s["clusterMetadata"]; ok {
+			c := ci.(map[string]interface{})
+			if ai, ok := c["adminKubeconfigSecretRef"]; ok {
+				a := ai.(map[string]interface{})
+				if ni, ok := a["name"]; ok {
+					configSecretRef = ni.(string)
+				}
+			}
+		}
+	}
+	if configSecretRef == "" {
+		Fail(fmt.Sprintf("adminKubeconfigSecretRef.name not found in clusterDeployment %s", clusterName))
+	}
+	s, err := hubClient.CoreV1().Secrets(clusterName).Get(context.TODO(), configSecretRef, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	config, err := clientcmd.Load(s.Data["kubeconfig"])
+	Expect(err).To(BeNil())
+	rconfig, err := clientcmd.NewDefaultClientConfig(
+		*config,
+		&clientcmd.ConfigOverrides{}).ClientConfig()
+	Expect(err).To(BeNil())
+	By("Checking if \"open-cluster-management-agent\" namespace on managed cluster exists", func() {
+		clientset, err := kubernetes.NewForConfig(rconfig)
+		Expect(err).To(BeNil())
+		_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), "open-cluster-management-agent", metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		klog.V(1).Info("\"open-cluster-management-agent\" namespace on managed cluster exists")
+	})
+	By("Checking if \"klusterlet\" on managed cluster exits", func() {
+		gvr := schema.GroupVersionResource{Group: "operator.open-cluster-management.io", Version: "v1", Resource: "klusterlets"}
+		clientDynamic, err := dynamic.NewForConfig(rconfig)
+		Expect(err).To(BeNil())
+		_, err = clientDynamic.Resource(gvr).Get(context.TODO(), "klusterlet", metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		klog.V(1).Info("klusterlet on managed cluster exists")
+	})
+}
+
+func WaitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName string) {
+	//gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
+	for _, addOnName := range managedClusteraddOns {
+		if !(clusterName == "local-cluster" && addOnName == "search-collector") {
+			Eventually(func() error {
+				klog.V(1).Infof("Cluster %s: Checking Add-On %s is available...", clusterName, addOnName)
+				return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
+			}).Should(BeNil())
+			klog.V(1).Infof("Cluster %s: all add-ons are available", clusterName)
+		}
+	}
+}
+
+func validateClusterAddOnAvailable(hubClientDynamic dynamic.Interface, clusterName string, addOnName string) error {
+
+	gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
+	managedClusterAddon, err := hubClientDynamic.Resource(gvr).Namespace(clusterName).Get(context.TODO(), addOnName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+
+	var condition map[string]interface{}
+	condition, err = libgounstructuredv1.GetConditionByType(managedClusterAddon, "Available")
+	if err != nil {
+		klog.V(4).Infof("Cluster %s - Add-On %s: %s", clusterName, addOnName, err)
+		return err
+	}
+	klog.V(4).Info(condition)
+	if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
+		klog.V(1).Infof("Cluster %s: Add-On %s is available...", clusterName, addOnName)
+		return nil
+	}
+	err = fmt.Errorf("cluster %s - Add-On %s: status not found or not true", clusterName, addOnName)
+	klog.V(4).Infof("Cluster %s - Add-On %s: %s", clusterName, addOnName, err)
+	return err
+
+}
+
+func DestroyCluster(cloud, vendor, cloudProviders string) {
+	var clusterName string
+	var hubClients *clients.HubClients
+
+	BeforeEach(func() {
+
+		if cloudProviders != "" && !isRequestedCloudProvider(cloud, cloudProviders) {
+			Skip(fmt.Sprintf("Cloud provider %s skipped", cloud))
+		}
+
+		hubClients = clients.GetHubClients()
+		gvrClusterDeployment := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
+		clusterDeploymentList, err := hubClients.DynamicClient.Resource(gvrClusterDeployment).List(context.TODO(), metav1.ListOptions{})
+		Expect(err).To(BeNil())
+
+		for _, cd := range clusterDeploymentList.Items {
+			if metadata, ok := cd.Object["metadata"]; ok {
+				meta := metadata.(map[string]interface{})
+				if name, ok := meta["name"]; ok {
+					if strings.HasPrefix(name.(string), cloud+"-"+libgooptions.GetOwner()) {
+						clusterName = name.(string)
+						break
+					}
+				}
+			}
+		}
+		if len(clusterName) == 0 {
+			Fail(fmt.Sprintf("No cluster for Cloud provider %s to delete", cloud))
+		}
+
+		if cloud == "baremetal" {
+			clusterName = libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterName
+		}
+
+		klog.V(1).Infof(`========================= Start Test destroy cluster %s  ===============================`, clusterName)
+		SetDefaultEventuallyTimeout(10 * time.Minute)
+		SetDefaultEventuallyPollingInterval(10 * time.Second)
+	})
+
+	AfterEach(func() {
+
+	})
+
+	It(fmt.Sprintf("[P1][Sev1][cluster-lifecycle] Destroy cluster %s on %s with vendor %s (cluster/g1/destroy-cluster)", clusterName, cloud, vendor), func() {
+		By("Checking the minimal requirements", func() {
+			klog.V(1).Infof("Cluster %s: Checking the minimal requirements", clusterName)
+			Eventually(func() bool {
+				klog.V(2).Infof("Cluster %s: Check CRDs", clusterName)
+				has, missing, _ := libgocrdv1.HasCRDs(hubClients.APIExtensionClient,
+					[]string{
+						"managedclusters.cluster.open-cluster-management.io",
+						"clusterdeployments.hive.openshift.io",
+						"syncsets.hive.openshift.io",
+					})
+				if !has {
+					klog.Errorf("Cluster %s: Missing CRDs\n%#v", clusterName, missing)
+				}
+				return has
+			}).Should(BeTrue())
+
+			Eventually(func() bool {
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
+					"open-cluster-management",
+					[]string{"managedcluster-import-controller-v2"})
+				if !has {
+					klog.Errorf("Cluster %s: Missing deployments\n%#v", clusterName, missing)
+				}
+				return has
+			}).Should(BeTrue())
+			Eventually(func() bool {
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
+					"open-cluster-management-hub",
+					[]string{"cluster-manager-registration-controller"})
+				if !has {
+					klog.Errorf("Cluster %s: Missing deployments\n%#v", clusterName, missing)
+				}
+				return has
+			}).Should(BeTrue())
+			Eventually(func() bool {
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
+					"hive",
+					[]string{"hive-controllers"})
+				if !has {
+					klog.Errorf("Missing deployments\n%#v", missing)
+				}
+				return has
+			}).Should(BeTrue())
+
+		})
+
+		By(fmt.Sprintf("Detaching the %s CR on the hub", clusterName), func() {
+			klog.V(1).Infof("Cluster %s: Detaching the %s CR on the hub", clusterName, clusterName)
+			gvr := schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
+			Expect(hubClients.DynamicClient.Resource(gvr).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
+		})
+
+		When(fmt.Sprintf("Detached, delete the clusterDeployment %s", clusterName), func() {
+			klog.V(1).Infof("Cluster %s: Deleting the clusterDeployment for cluster %s", clusterName, clusterName)
+			gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
+			Expect(hubClients.DynamicClient.Resource(gvr).Namespace(clusterName).Delete(context.TODO(), clusterName, metav1.DeleteOptions{})).Should(BeNil())
+		})
+
+		When(fmt.Sprintf("Wait clusterDeployment %s to be deleted", clusterName), func() {
+			waitDetroyed(hubClients.DynamicClient, clusterName)
+		})
+
+		When(fmt.Sprintf("Wait namespace %s to be deleted", clusterName), func() {
+			waitNamespaceDeleted(hubClients.KubeClient, hubClients.DynamicClient, hubClients.DiscoveryClient, clusterName)
+		})
+
+		klog.V(1).Infof("========================= End Test destroy cluster %s ===============================", clusterName)
+
+	})
+
+}
+
+func waitNamespaceDeleted(
+	hubClient kubernetes.Interface,
+	hubClientDynamic dynamic.Interface,
+	hubClientDiscovery *discovery.DiscoveryClient,
+	clusterName string) {
+	By(fmt.Sprintf("Checking the deletion of the %s namespace on the hub", clusterName), func() {
+		klog.V(1).Infof("Cluster %s: Checking the deletion of the %s namespace on the hub", clusterName, clusterName)
+		Eventually(func() bool {
+			klog.V(1).Infof("Cluster %s: Wait %s namespace deletion...", clusterName, clusterName)
+			_, err := hubClient.CoreV1().Namespaces().Get(context.TODO(), clusterName, metav1.GetOptions{})
+			if err != nil {
+				klog.V(1).Info(err)
+				return errors.IsNotFound(err)
+			}
+			err = PrintLeftOver(hubClientDynamic, hubClientDiscovery, clusterName)
+			if err != nil {
+				klog.Error(err)
+			}
+			return false
+		}, 3600, 60).Should(BeTrue())
+		klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
+	})
+}
+
+func PrintLeftOver(dynamicClient dynamic.Interface, discoveryClient *discovery.DiscoveryClient, ns string) error {
+	klog.Infof("==================== Left Over in %s ======================", ns)
+	_, err := dynamicClient.Resource(schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "namespaces",
+	}).Get(context.TODO(), ns, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+	apiResourceLists, err := discoveryClient.ServerPreferredNamespacedResources()
+	if err != nil {
+		return err
+	}
+	for _, apiResourceList := range apiResourceLists {
+		for _, apiResource := range apiResourceList.APIResources {
+			us, err := dynamicClient.Resource(
+				schema.GroupVersionResource{
+					Group:    apiResourceList.GroupVersionKind().Group,
+					Version:  apiResourceList.GroupVersion,
+					Resource: apiResource.Name,
+				}).Namespace(ns).List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				if !errors.IsNotFound(err) {
+					klog.Errorf("Group: %s, Version: %s, Resource: %s Error: %s",
+						apiResourceList.GroupVersionKind().Group,
+						apiResourceList.GroupVersion,
+						apiResource.Name, err)
+				}
+				continue
+			}
+			for _, u := range us.Items {
+				klog.Infof("Kind: %s, Name: %s", u.GetKind(), u.GetName())
+			}
+		}
+	}
+	return nil
 }

@@ -19,7 +19,13 @@ WORKDIR $REMOTE_SOURCE_DIR/app
 # RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
 # compile go tests in build image
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build -tags e2e e2e-test 
+# RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build -tags e2e pkg/tests 
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/metrics
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/create_cluster
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/create_cluster_bm
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/import_cluster
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/detach_destroy
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.15.0 && GOFLAGS="" ginkgo build pkg/tests/destroy_bm
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -54,10 +60,16 @@ USER root
 COPY --from=builder /go/bin/ /usr/local/bin
 
 # Copy resources which contains the options.yaml
-COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/resources /test/resources
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/resources /test/resources
 
 # install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test/e2e-test.test /test
+# COPY --from=builder $REMOTE_SOURCE_DIR/app/e2e-test.test /test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/metrics/metrics.test /test/metrics/metrics.test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/create_cluster/create_cluster.test /test/create_cluster/create_cluster.test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/create_cluster_bm/create_cluster_bm.test /test/create_cluster_bm/create_cluster_bm.test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/import_cluster/import_cluster.test /test/import_cluster/import_cluster.test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/detach_destroy/detach_destroy.test /test/detach_destroy/detach_destroy.test
+COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/destroy_bm/destroy_bm.test /test/destroy_bm/destroy_bm.test
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh 
 VOLUME /results
 WORKDIR "/test"
