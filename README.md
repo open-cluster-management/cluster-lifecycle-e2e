@@ -27,10 +27,10 @@ The tests in this container will:
 $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 ```
 
-2. copy `pkg/resources/options.yaml.template` to `pkg/resources/options.yaml`, and update values specific to your environment:
+2. copy `pkg/tests/resources/options.yaml.template` to `pkg/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp pkg/resources/options.yaml.template pkg/resources/options.yaml
+$ cp pkg/tests/resources/options.yaml.template pkg/resources/options.yaml
 ```
 
 3. run testing:
@@ -60,13 +60,13 @@ $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 $ cd cluster-lifecycle-e2e
 ```
 
-2. copy `e2e-test/resources/options_template.yaml` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
+2. copy `pkg/resources/options_template.yaml` to `pkg/resources/options.yaml`, and update values specific to your environment:
 
 ```
 $ cp pkg/resources/options_template.yaml pkg/resources/options.yaml
 ```
 
-3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to e2e-test/resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
+3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to pkg/resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
 
 4. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
 
