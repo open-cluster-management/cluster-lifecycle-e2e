@@ -3,6 +3,7 @@
 # Copyright (c) 2020 Red Hat, Inc.
 
 echo "Initiating tests..."
+echo "Tests start at "$(date)
 
 if [[ $TEST_GROUP == "import" ]]; then
     ginkgo -v -focus="import" --reportFile=$REPORT_FILE_IMPORT -trace -debug import_cluster/import_cluster.test -- -v=3
@@ -17,3 +18,5 @@ elif [[ $TEST_GROUP == "create-baremetal" ]]; then
 elif [[ $TEST_GROUP == "destroy-baremetal" ]]; then
     ginkgo -v -focus="destroy" --reportFile=$REPORT_FILE_BM -trace -debug destroy_bm/destroy_bm.test -- -v=3 -cloud-providers=baremetal
 fi
+
+echo "Tests end at "$(date)
