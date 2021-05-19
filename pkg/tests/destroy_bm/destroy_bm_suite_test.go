@@ -2,11 +2,14 @@ package destroy_bm
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 
 	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"k8s.io/klog"
 )
@@ -30,5 +33,6 @@ var _ = BeforeSuite(func() {
 
 func TestDetachDestroy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Destroy baremetal Suite")
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result-destroy-bm", config.GinkgoConfig.ParallelNode))
+	RunSpecsWithDefaultAndCustomReporters(t, "Destroy baremetal Suite", []Reporter{junitReporter})
 }
