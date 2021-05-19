@@ -8,9 +8,9 @@ echo "Tests start at "$(date)
 if [[ $TEST_GROUP == "import" ]]; then
     ginkgo -v -focus="import" --reportFile=$REPORT_FILE_IMPORT -trace -debug import_cluster/import_cluster.test -- -v=3
 elif [[ $TEST_GROUP == "provision-all" ]]; then
-    ginkgo -v -focus="create" --nodes=3 -trace -debug create_cluster/create_cluster.test -- -v=3 -owner="ginkgo-$TRAVIS_BUILD_ID" -report-file=$REPORT_FILE_CREATE -cloud-providers=aws,azure,gcp
+    ginkgo -v -focus="create" --nodes=3 --reportFile=$REPORT_FILE_CREATE  -trace -debug create_cluster/create_cluster.test -- -v=3 -owner="ginkgo-$TRAVIS_BUILD_ID" -cloud-providers=aws
 elif [[ $TEST_GROUP == "destroy" ]]; then
-    ginkgo -v -focus="detach|destroy" -p -trace -debug detach_destroy/detach_destroy.test -- -v=3 -owner="ginkgo-$TRAVIS_BUILD_ID" -report-file=$REPORT_FILE_DESTROY -cloud-providers=aws,azure,gcp
+    ginkgo -v -focus="detach|destroy" -p --reportFile=$REPORT_FILE_DESTROY -trace -debug detach_destroy/detach_destroy.test -- -v=3 -owner="ginkgo-$TRAVIS_BUILD_ID" -cloud-providers=aws
 elif [[ $TEST_GROUP == "metrics" ]]; then
     ginkgo -v -focus="metrics" --reportFile=$REPORT_FILE_METRICS -trace -debug metrics/metrics.test -- -v=3
 elif [[ $TEST_GROUP == "create-baremetal" ]]; then

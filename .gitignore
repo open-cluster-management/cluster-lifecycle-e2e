@@ -22,11 +22,7 @@ e2e-test.test
 
 kubeconfig.yaml
 
-resources/options.yaml
-resources/install-config.yaml
-resources/clusterdeploy.yaml
-pkg/resources/options.yaml
-pkg/resources/import/kubeconfig
+resources
 
 .build-harness
 .build-harness-bootstrap
