@@ -9,6 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
 	libgounstructuredv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/unstructured"
@@ -43,7 +45,8 @@ var _ = BeforeSuite(func() {
 
 func TestImport(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Import Suite")
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result-import", config.GinkgoConfig.ParallelNode))
+	RunSpecsWithDefaultAndCustomReporters(t, "Import Suite", []Reporter{junitReporter})
 }
 
 func checkManifestWorksApplied(hubClientDynamic dynamic.Interface, clusterName string) {

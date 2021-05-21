@@ -2,9 +2,12 @@ package create_cluster_bm
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
 	"k8s.io/klog"
@@ -29,5 +32,6 @@ var _ = BeforeSuite(func() {
 
 func TestCreateBM(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Create Baremetal Suite")
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result-create-bm", config.GinkgoConfig.ParallelNode))
+	RunSpecsWithDefaultAndCustomReporters(t, "Create Baremetal Suite", []Reporter{junitReporter})
 }

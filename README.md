@@ -60,13 +60,13 @@ $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 $ cd cluster-lifecycle-e2e
 ```
 
-2. copy `pkg/resources/options_template.yaml` to `pkg/resources/options.yaml`, and update values specific to your environment:
+2. copy `pkg/resources/options_template.yaml` to `resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp pkg/resources/options_template.yaml pkg/resources/options.yaml
+$ cp pkg/resources/options_template.yaml resources/options.yaml
 ```
 
-3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to pkg/resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
+3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
 
 4. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
 
@@ -103,10 +103,10 @@ TEST_GROUP values can be
 - create-baremetal -> to provision baremetal cluster
 - destroy-baremetal -> to destroy baremetal cluster
 
-For import test, save kubeconfig of cluster to be imported in path `$(pwd)/pkg/resources/import/kubeconfig`
+For import test, save kubeconfig of cluster to be imported in path `$(pwd)/resources/import/kubeconfig`
 
 ```
-$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/pkg/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/pkg/resources:/resources -v $(pwd)/pkg/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
+$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/resources:/resources -v $(pwd)/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
 ```
 
 In Canary environment, this is the container that will be run - and all the volumes etc will passed on while starting the docker container using a helper script.

@@ -2,11 +2,14 @@ package detach_destroy
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 
 	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"k8s.io/klog"
 )
@@ -36,5 +39,6 @@ var _ = BeforeSuite(func() {
 
 func TestDetachDestroy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "DetachDestroy Suite")
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result-detach-destroy", config.GinkgoConfig.ParallelNode))
+	RunSpecsWithDefaultAndCustomReporters(t, "DetachDestroy Suite", []Reporter{junitReporter})
 }

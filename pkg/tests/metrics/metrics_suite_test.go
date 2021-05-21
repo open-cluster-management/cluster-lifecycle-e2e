@@ -3,9 +3,12 @@
 package metrics
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
 	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
@@ -25,5 +28,6 @@ var _ = BeforeSuite(func() {
 
 func TestMetrics(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Metrics Suite")
+	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("%s-%d.xml", "/results/result-metrics", config.GinkgoConfig.ParallelNode))
+	RunSpecsWithDefaultAndCustomReporters(t, "Metrics Suite", []Reporter{junitReporter})
 }
