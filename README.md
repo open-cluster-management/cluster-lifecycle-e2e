@@ -27,10 +27,10 @@ The tests in this container will:
 $ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
 ```
 
-2. copy `pkg/tests/resources/options.yaml.template` to `pkg/resources/options.yaml`, and update values specific to your environment:
+2. copy `pkg/resources/options_template.yaml` to `pkg/resources/options.yaml`, and update values specific to your environment:
 
 ```
-$ cp pkg/tests/resources/options.yaml.template pkg/resources/options.yaml
+$ cp pkg/resources/options_template.yaml pkg/resources/options.yaml
 ```
 
 3. run testing:
