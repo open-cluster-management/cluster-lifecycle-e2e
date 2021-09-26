@@ -1,22 +1,10 @@
-FROM openshift/origin-release:golang-1.16 as builder
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
-ARG GITHUB_TOKEN
-ARG COMPONENT_VERSION
-
-ENV USE_VENDORIZED_BUILD_HARNESS=true
-ENV COMPONENT_NAME=cluster-lifecycle-e2e
-ENV COMPONENT_VERSION="${COMPONENT_VERSION}"
-
-
-ENV GOPATH /go
-
-ENV PATH usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin:/go/bin:.
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
-# RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
 # compile go tests in build image
 # RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@vv1.16.4 && GOFLAGS="" ginkgo build -tags e2e pkg/tests 
@@ -36,7 +24,8 @@ ARG IMAGE_DESCRIPTION
 ARG ARCH_TYPE
 ARG REMOTE_SOURCE_DIR
 
-RUN microdnf update
+RUN microdnf update && \
+    microdnf clean all
 
 # expose env vars for runtime
 ENV KUBECONFIG "/opt/.kube/config"
