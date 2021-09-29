@@ -12,7 +12,8 @@ require (
 	github.com/open-cluster-management/library-e2e-go v0.0.0-20210219164826-04b5828bcc17
 	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
-	golang.org/x/sys v0.0.0-20210925032602-92d5a993a665 // indirect
+	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
+	golang.org/x/tools v0.1.7 // indirect
 	k8s.io/api v0.20.6
 	k8s.io/apiextensions-apiserver v0.20.6
 	k8s.io/apimachinery v0.20.6
