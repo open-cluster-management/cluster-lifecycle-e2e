@@ -38,17 +38,17 @@ $ cp pkg/resources/options_template.yaml pkg/resources/options.yaml
 From the project root:
 ```
 $ export KUBECONFIG=~/.kube/config
-$ ginkgo -v -p -stream pkg/tests/<test_package_name> -- -options=../resources/options.yaml -v=3
+$ ginkgo -v -p -stream pkg/tests/<test_package_name> -- -options=../../resources/options.yaml -v=3
 ```
 for example:
 ```
-ginkgo -v -p -stream pkg/tests/metrics -- -options=../resources/options.yaml -v=3
+ginkgo -v -p -stream pkg/tests/metrics -- -options=../../resources/options.yaml -v=3
 ```
 
 You can run a specific test by adding the `focus` parameter, for example:
 
 ```
-ginkgo -v -p -focus="import" -stream pkg/tests/import -- -options=../resources/options.yaml -v=3
+ginkgo -v -p -focus="import" -stream pkg/tests/import_cluster -- -options=../../resources/options.yaml -v=3
 ```
 
 ## Running with Docker
@@ -66,7 +66,7 @@ $ cd cluster-lifecycle-e2e
 $ cp pkg/resources/options_template.yaml resources/options.yaml
 ```
 
-3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to resources/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
+3. If you want run the "import" scenario, copy the kubeconfig of the cluster to import to pkg/tests/resources/hub/import/kubeconfig and set the kubeconfig of the cluster in the options.yaml to `/opt/.kube/import-kubeconfig`
 
 4. oc login to your hub cluster where you want to run these tests - and make sure that remains the current-context in kubeconfig:
 
@@ -75,25 +75,19 @@ $ kubectl config current-context
 open-cluster-management/api-demo-dev02-red-chesterfield-com:6443/kube:admin
 ```
 
-5. Set env variables `GITHUB_USER` and `GITHUB_TOKEN` and Run `make deps`. This will download necessary dependencies
+5. Run `make build-image`. This will create a docker image:
 
 ```
-$ make deps
+$ make build-image
 ```
 
-6. Run `make build`. This will create a docker image:
-
-```
-$ make build
-```
-
-7. run the following command to get docker image ID, we will use this in the next step:
+6. run the following command to get docker image ID, we will use this in the next step:
 
 ```
 $ export docker_image_id=`docker images | grep cluster-lifecycle-e2e | sed -n '1p' | awk '{print $3}'`
 ```
 
-8. run testing:
+7. run testing:
 
 TEST_GROUP values can be
 - import -> to import an existing cluster
@@ -103,10 +97,10 @@ TEST_GROUP values can be
 - create-baremetal -> to provision baremetal cluster
 - destroy-baremetal -> to destroy baremetal cluster
 
-For import test, save kubeconfig of cluster to be imported in path `$(pwd)/resources/import/kubeconfig`
+For import test, save kubeconfig of cluster to be imported in path `$(pwd)/pkg/tests/resources/hub/import/kubeconfig`
 
 ```
-$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/resources/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/resources:/resources -v $(pwd)/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
+$ docker run -v ~/.kube/config:/opt/.kube/config -v $(pwd)/pkg/tests/resources/hub/import/kubeconfig:/opt/.kube/import-kubeconfig -v $(pwd)/results:/results -v $(pwd)/pkg/resources:/resources -v $(pwd)/pkg/resources/options.yaml:/resources/options.yaml  --env TEST_GROUP="import" $docker_image_id
 ```
 
 In Canary environment, this is the container that will be run - and all the volumes etc will passed on while starting the docker container using a helper script.
