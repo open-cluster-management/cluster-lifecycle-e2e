@@ -10,10 +10,9 @@ require (
 	github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b
 	//github.com/open-cluster-management/endpoint-operator v1.0.1-2020-05-28-18-29-00.0.20201123150704-b95ad181d88a // indirect
 	github.com/open-cluster-management/library-e2e-go v0.0.0-20210219164826-04b5828bcc17
-	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
+	github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
-	golang.org/x/tools v0.1.7 // indirect
 	k8s.io/api v0.20.6
 	k8s.io/apiextensions-apiserver v0.20.6
 	k8s.io/apimachinery v0.20.6
