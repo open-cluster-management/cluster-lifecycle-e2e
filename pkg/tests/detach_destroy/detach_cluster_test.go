@@ -173,12 +173,17 @@ func waitDetached(hubClientDynamic dynamic.Interface, clusterName string) {
 		Eventually(func() bool {
 			klog.V(1).Infof("Cluster %s: Wait %s managedCluster deletion...", clusterName, clusterName)
 			_, err := hubClientDynamic.Resource(gvr).Get(context.TODO(), clusterName, metav1.GetOptions{})
-			if err != nil {
-				klog.V(4).Infof("Cluster %s: %s", clusterName, err)
-				return errors.IsNotFound(err)
+			if errors.IsNotFound(err) {
+				return true
 			}
+
+			if err != nil {
+				klog.Errorf("Cluster %s: Failed to get managed cluster: %v", clusterName, err)
+				return false
+			}
+
 			return false
-		}).Should(BeTrue())
+		}, 60*time.Second, 1*time.Second).Should(BeTrue())
 		klog.V(1).Infof("Cluster %s: %s managedCluster deleted", clusterName, clusterName)
 	})
 }
