@@ -44,6 +44,11 @@ var managedClusteraddOns = []string{
 	"work-manager",
 }
 
+var (
+	eventuallyTimeout  = 300
+	eventuallyInterval = 10
+)
+
 func WaitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
 	Eventually(func() error {
 		klog.V(1).Infof("Cluster %s: Wait %s to be imported...", clusterName, clusterName)
@@ -586,7 +591,7 @@ func waitClusterImported(hubClientDynamic dynamic.Interface, clusterName string)
 	Eventually(func() error {
 		klog.V(1).Infof("Cluster %s: Wait %s to be imported...", clusterName, clusterName)
 		return checkClusterImported(hubClientDynamic, clusterName)
-	}).Should(BeNil())
+	}, eventuallyTimeout, eventuallyInterval).Should(BeNil())
 	klog.V(1).Infof("Cluster %s: imported", clusterName)
 }
 
@@ -642,7 +647,7 @@ func WaitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName
 			Eventually(func() error {
 				klog.V(1).Infof("Cluster %s: Checking Add-On %s is available...", clusterName, addOnName)
 				return validateClusterAddOnAvailable(hubClientDynamic, clusterName, addOnName)
-			}).Should(BeNil())
+			}, eventuallyTimeout, eventuallyInterval).Should(BeNil())
 			klog.V(1).Infof("Cluster %s: all add-ons are available", clusterName)
 		}
 	}
