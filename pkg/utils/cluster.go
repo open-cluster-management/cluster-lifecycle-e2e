@@ -45,7 +45,7 @@ var managedClusteraddOns = []string{
 }
 
 var (
-	eventuallyTimeout  = 300
+	eventuallyTimeout  = 600
 	eventuallyInterval = 10
 )
 
