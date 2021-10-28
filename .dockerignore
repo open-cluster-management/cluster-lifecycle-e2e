@@ -6,14 +6,10 @@
 *.md
 
 # ignore build files
-.travis.yml
 COMPONENT_NAME
 COMPONENT_VERSION
 RELEASE_FF_BRANCH
 Makefile
-/build-harness
-/build-harness-extensions
-.build-harness-bootstrap
 
 # ignore results dir
 results
