@@ -1,10 +1,5 @@
-
 SHELL := /bin/bash
 
-export GITHUB_USER    := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
-export GITHUB_TOKEN   ?=
-
-#export COMPONENT_TYPE=cluster-lifecycle-e2e
 export PROJECT_DIR            = $(shell 'pwd')
 export BUILD_DIR              = $(PROJECT_DIR)/build
 
@@ -34,16 +29,7 @@ export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
 export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
 export DOCKER_BUILD_TAG  ?= latest
 export DOCKER_TAG        ?= $(shell whoami)
-
-
-USE_VENDORIZED_BUILD_HARNESS ?=
-
-ifndef USE_VENDORIZED_BUILD_HARNESS
-# -include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/itdove/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap?branch=code_coverage -o .build-harness-bootstrap; echo .build-harness-bootstrap)
--include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
-else
--include vbh/.build-harness-vendorized
-endif
+export DOCKER_BUILDER    ?= docker
 
 export DOCKER_BUILD_OPTS  = --build-arg VCS_REF=$(VCS_REF) \
 	--build-arg VCS_URL=$(GIT_REMOTE_URL) \
@@ -52,8 +38,7 @@ export DOCKER_BUILD_OPTS  = --build-arg VCS_REF=$(VCS_REF) \
 	--build-arg ARCH_TYPE=$(ARCH_TYPE) \
 	--build-arg REMOTE_SOURCE=. \
 	--build-arg REMOTE_SOURCE_DIR=/remote-source \
-	--build-arg BUILD_HARNESS_EXTENSIONS_PROJECT=${BUILD_HARNESS_EXTENSIONS_PROJECT} \
-	--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
+	--build-arg BUILD_HARNESS_EXTENSIONS_PROJECT=${BUILD_HARNESS_EXTENSIONS_PROJECT}
 
 # Only use git commands if it exists
 ifdef GIT
@@ -66,16 +51,22 @@ endif
 ## Download all project dependencies
 deps: init component/init
 
-# .PHONY: build
-# build:
-# 	make docker/info
-# 	make docker/build
-
 .PHONY: push
 push:: docker/tag docker/login
 	make docker/push
 
 .PHONY: build
 build:
-	make component/build
-	
+	go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4
+	ginkgo build pkg/tests/metrics
+	ginkgo build pkg/tests/create_cluster
+	ginkgo build pkg/tests/create_cluster_bm
+	ginkgo build pkg/tests/import_cluster
+	ginkgo build pkg/tests/detach_destroy
+	ginkgo build pkg/tests/destroy_bm
+
+.PHONY: build-image
+build-image:
+	@$(DOCKER_BUILDER) build -t $(DOCKER_IMAGE) -f $(DOCKER_FILE) .
+	echo "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:$(DOCKER_BUILD_TAG)"
+	@$(DOCKER_BUILDER) tag $(DOCKER_IMAGE) ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:$(DOCKER_BUILD_TAG)

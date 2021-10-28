@@ -3,13 +3,9 @@
 .vscode
 /build/_output
 /cmd/manager/__debug_bin
-build-harness
-build-harness-extensions
 vendor
 /.DS_Store
 /.project
-/build-harness
-/build-harness-extensions
 /vendor
 .idea
 
@@ -25,17 +21,15 @@ kubeconfig.yaml
 
 resources
 
-.build-harness
-.build-harness-bootstrap
 .vscode
 .test.sh
 
 local.rc
 .DS_Store
 
-# override build harness vendoring
-!vbh/.build-harness-vendorized
-!vbh/build-harness
-!vbh/build-harness-extensions
-
-#observability-e2e-test.test
+pkg/tests/create_cluster/create_cluster.test
+pkg/tests/create_cluster_bm/create_cluster_bm.test
+pkg/tests/destroy_bm/destroy_bm.test
+pkg/tests/detach_destroy/detach_destroy.test
+pkg/tests/import_cluster/import_cluster.test
+pkg/tests/metrics/metrics.test
