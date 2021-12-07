@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
-	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -229,7 +229,6 @@ with image %s ===============================`, clusterName, imageRefName)
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
 				imagesetsList, err := hubClients.DynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 				Expect(err).To(BeNil())
-				var imageSets []string
 
 				for _, imageset := range imagesetsList.Items {
 					if metadata, ok := imageset.Object["metadata"]; ok {
@@ -237,19 +236,20 @@ with image %s ===============================`, clusterName, imageRefName)
 							if name, ok := m["name"]; ok {
 								strName := fmt.Sprintf("%v", name)
 								klog.V(1).Infof("Cluster %s: Add imageset: %s", clusterName, strName)
-								imageSets = append(imageSets, strName)
+								if len(imageRefName) == 0 {
+									imageRefName = strName
+									continue
+								}
+								cmpResult, err := compareImageVersion(imageRefName, strName)
+								if err != nil {
+									break
+								}
+								if !cmpResult {
+									imageRefName = strName
+								}
 							}
 						}
 					}
-				}
-
-				sort.Strings(imageSets)
-				if len(imageSets) > 0 {
-					if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
-						imageRefName = imageSets[len(imageSets)-1]
-					}
-				} else {
-					klog.Error("ClusterImageSets length is zero, probably an OCP issue")
 				}
 			}
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
@@ -341,6 +341,41 @@ with image %s ===============================`, clusterName, imageRefName)
 
 	})
 
+}
+
+// the string format should be like: img4.8.10-x86_64.yaml
+// if s1> s2, return true, or return false
+func compareImageVersion(s1, s2 string) (bool, error) {
+	s1VersionLastIndex := strings.Index(s1, "-")
+	s1VersionStr := s1[3:s1VersionLastIndex]
+
+	s2VersionLastIndex := strings.Index(s2, "-")
+	s2VersionStr := s2[3:s2VersionLastIndex]
+
+	s1VersionArray := strings.Split(s1VersionStr, ".")
+	s2VersionArray := strings.Split(s2VersionStr, ".")
+
+	for i, s1 := range s1VersionArray {
+		if len(s2VersionArray) <= i {
+			return true, fmt.Errorf("Version is not right in :%v", s2)
+		}
+		s1Version, err := strconv.Atoi(s1)
+		if err != nil {
+			return true, err
+		}
+		s2Version, err := strconv.Atoi(s2VersionArray[i])
+		if err != nil {
+			return true, err
+		}
+		if s1Version > s2Version {
+			return true, nil
+		}
+		if s1Version < s2Version {
+			return false, nil
+		}
+	}
+	//if two versions are same, use length to compare.
+	return len(s1) > len(s2), nil
 }
 
 func isRequestedCloudProvider(cloud, cloudProviders string) bool {
