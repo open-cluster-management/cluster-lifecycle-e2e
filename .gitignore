@@ -30,6 +30,8 @@ e2e-test/resources/options.yaml
 .build-harness-bootstrap
 .vscode
 .test.sh
+.idea
+*.test
 
 local.rc
 .DS_Store
