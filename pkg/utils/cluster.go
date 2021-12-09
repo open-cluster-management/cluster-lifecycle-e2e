@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -229,7 +228,6 @@ with image %s ===============================`, clusterName, imageRefName)
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
 				imagesetsList, err := hubClients.DynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 				Expect(err).To(BeNil())
-				var imageSets []string
 
 				for _, imageset := range imagesetsList.Items {
 					if metadata, ok := imageset.Object["metadata"]; ok {
@@ -237,19 +235,16 @@ with image %s ===============================`, clusterName, imageRefName)
 							if name, ok := m["name"]; ok {
 								strName := fmt.Sprintf("%v", name)
 								klog.V(1).Infof("Cluster %s: Add imageset: %s", clusterName, strName)
-								imageSets = append(imageSets, strName)
-							}
+								if len(imageRefName) == 0 {
+									imageRefName = strName
+									continue
+								}
+								// get the max version to deploy
+								if compareImageVersion(imageRefName, strName) < 0 {
+									imageRefName = strName
+								}							}
 						}
 					}
-				}
-
-				sort.Strings(imageSets)
-				if len(imageSets) > 0 {
-					if strings.HasPrefix(imageSets[len(imageSets)-1], "img") {
-						imageRefName = imageSets[len(imageSets)-1]
-					}
-				} else {
-					klog.Error("ClusterImageSets length is zero, probably an OCP issue")
 				}
 			}
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud == "baremetal" {
@@ -341,6 +336,53 @@ with image %s ===============================`, clusterName, imageRefName)
 
 	})
 
+}
+
+// compareImageVersion returns an integer comparing two strings lexicographically.
+// The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
+// imageVersion format like img4.6.3-x86-64-appsub
+func compareImageVersion(a, b string) int {
+	strA := strings.ToLower(a)
+	strB := strings.ToLower(b)
+
+	switch {
+	case strings.Compare(strA, strB) == 0:
+		return 0
+	case strings.HasPrefix(strA, "img") && !strings.HasPrefix(strB, "img"):
+		return 1
+	case !strings.HasPrefix(strA, "img") && strings.HasPrefix(strB, "img"):
+		return -1
+	}
+
+	subStrA := strings.Split(strA, "-")
+	subStrB := strings.Split(strB, "-")
+
+	versionA := strings.Trim(subStrA[0], "img")
+	versionB := strings.Trim(subStrB[0], "img")
+
+	if strings.Compare(versionA, versionB) == 0 {
+		return 0
+	}
+
+	subVersionA := strings.Split(versionA, ".")
+	subVersionB := strings.Split(versionB, ".")
+
+	lenA := len(subVersionA)
+	lenB := len(subVersionB)
+	for i := 0; i < lenA && i < lenB; i++ {
+		switch {
+		case len(subVersionA[i]) > len(subVersionB[i]):
+			return 1
+		case len(subVersionA[i]) < len(subVersionB[i]):
+			return -1
+		case len(subVersionA[i]) == len(subVersionB[i]):
+			rst := strings.Compare(subVersionA[i], subVersionB[i])
+			if rst != 0 {
+				return rst
+			}
+		}
+	}
+	return 0
 }
 
 func isRequestedCloudProvider(cloud, cloudProviders string) bool {
