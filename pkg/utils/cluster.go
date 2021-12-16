@@ -304,6 +304,14 @@ with image %s ===============================`, clusterName, imageRefName)
 							return nil
 						}
 					}
+					var condition map[string]interface{}
+					condition, err = libgounstructuredv1.GetConditionByType(clusterDeployment, "ProvisionFailed")
+					if err == nil {
+						if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
+							return fmt.Errorf("Failed to provision cluster. reason:%v, message: %v", condition["reason"], condition["message"])
+						}
+					}
+
 					return fmt.Errorf("no status available")
 				} else {
 					klog.V(4).Info(err)
