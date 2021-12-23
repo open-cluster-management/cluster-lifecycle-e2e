@@ -128,15 +128,15 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 				By(fmt.Sprintf("Checking if the %s crd is deleted", klusterletCRDName), func() {
 					klog.V(1).Infof("Cluster %s: Checking if the %s crd is deleted", clusterName, klusterletCRDName)
 					gvr := schema.GroupVersionResource{Group: "operator.open-cluster-management.io", Version: "v1", Resource: "klusterlets"}
-					Eventually(func() bool {
+					Eventually(func() error {
 						klog.V(1).Infof("Cluster %s: Wait %s crd deletion...", clusterName, klusterletCRDName)
 						_, err := managedClusterDynamicClient.Resource(gvr).Get(context.TODO(), klusterletCRDName, metav1.GetOptions{})
-						if err != nil {
-							klog.V(1).Infof("Cluster %s: %s", clusterName, err)
-							return errors.IsNotFound(err)
+						if errors.IsNotFound(err) {
+							return nil
 						}
-						return false
-					}).Should(BeTrue())
+
+						return utils.GenerateErrorMsg(utils.NeedInvestigate, "", "klusterlet cleanup failed", "klusterlet CR can not be deleted")
+					}).Should(BeNil())
 				})
 			})
 
@@ -159,11 +159,9 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Detach cluste
 					klog.V(1).Infof("Cluster %s: %s namespace deleted", clusterName, clusterName)
 				})
 			})
-
 		}
 
 	})
-
 })
 
 func waitDetached(hubClientDynamic dynamic.Interface, clusterName string) {
