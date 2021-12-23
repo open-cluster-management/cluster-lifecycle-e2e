@@ -48,6 +48,15 @@ var (
 	eventuallyInterval = 10
 )
 
+const (
+	KnownIssueTag                = "[known issue]"
+	DetachKnownIssueLink         = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#klusterlet-crd-can-not-be-deleted"
+	QuotaLimitTag                = "[quota limit]"
+	ProvisionQuotaLimitErrorLink = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#quota-limit-in-awsazuregcp"
+	UnknownError                 = "[unknown error]"
+	ProvisionUnknownErrorLink    = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#cloud-providerawsgcpazure-bug-or-ocp-installer-bug"
+)
+
 func WaitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
 	Eventually(func() error {
 		klog.V(1).Infof("Cluster %s: Wait %s to be imported...", clusterName, clusterName)
@@ -242,7 +251,8 @@ with image %s ===============================`, clusterName, imageRefName)
 								// get the max version to deploy
 								if compareImageVersion(imageRefName, strName) < 0 {
 									imageRefName = strName
-								}							}
+								}
+							}
 						}
 					}
 				}
@@ -308,11 +318,16 @@ with image %s ===============================`, clusterName, imageRefName)
 					condition, err = libgounstructuredv1.GetConditionByType(clusterDeployment, "ProvisionFailed")
 					if err == nil {
 						if v, ok := condition["status"]; ok && v == string(metav1.ConditionTrue) {
-							return fmt.Errorf("Failed to provision cluster. reason:%v, message: %v", condition["reason"], condition["message"])
+							if strings.HasSuffix(condition["reason"].(string), "LimitExceeded") {
+								return GenerateErrorMsg(QuotaLimitTag, ProvisionQuotaLimitErrorLink, condition["reason"].(string), condition["message"].(string))
+							}
+							if condition["reason"].(string) == "UnknownError" {
+								return GenerateErrorMsg(UnknownError, ProvisionUnknownErrorLink, condition["reason"].(string), condition["message"].(string))
+							}
+							return GenerateErrorMsg("", "", condition["reason"].(string), condition["message"].(string))
 						}
 					}
-
-					return fmt.Errorf("no status available")
+					return fmt.Errorf("Failed to get provision result.")
 				} else {
 					klog.V(4).Info(err)
 				}
@@ -344,6 +359,14 @@ with image %s ===============================`, clusterName, imageRefName)
 
 	})
 
+}
+
+func GenerateErrorMsg(tag, solution, reason, errmsg string) error {
+	return fmt.Errorf("Tag: %v, "+
+		"Possible Solution: %v, "+
+		"Reason: %v, "+
+		"Error message: %v,",
+		tag, solution, reason, errmsg)
 }
 
 // compareImageVersion returns an integer comparing two strings lexicographically.
