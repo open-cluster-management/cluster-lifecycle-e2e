@@ -55,6 +55,11 @@ const (
 	ProvisionQuotaLimitErrorLink = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#quota-limit-in-awsazuregcp"
 	UnknownError                 = "[unknown error]"
 	ProvisionUnknownErrorLink    = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#cloud-providerawsgcpazure-bug-or-ocp-installer-bug"
+
+	//List key word about quota limit which can not be identified in clusterdeployment.
+
+	//failed to fetch dependency of \"Cluster\": failed to generate asset \"Platform Quota Check\": error(MissingQuota): compute.googleapis.com/firewalls is not available in global because the required number of resources (6) is more than remaining quota of 0\n,",
+	gcpQuotaLimitMsg = "more than remaining quota"
 )
 
 func WaitClusterImported(hubClientDynamic dynamic.Interface, clusterName string) {
@@ -321,6 +326,11 @@ with image %s ===============================`, clusterName, imageRefName)
 							if strings.HasSuffix(condition["reason"].(string), "LimitExceeded") {
 								return GenerateErrorMsg(QuotaLimitTag, ProvisionQuotaLimitErrorLink, condition["reason"].(string), condition["message"].(string))
 							}
+
+							if strings.Contains(condition["message"].(string), gcpQuotaLimitMsg) {
+								return GenerateErrorMsg(QuotaLimitTag, ProvisionQuotaLimitErrorLink, condition["reason"].(string), condition["message"].(string))
+							}
+
 							if condition["reason"].(string) == "UnknownError" {
 								return GenerateErrorMsg(UnknownError, ProvisionUnknownErrorLink, condition["reason"].(string), condition["message"].(string))
 							}
