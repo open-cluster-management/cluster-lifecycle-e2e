@@ -301,12 +301,6 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.13.0 h1:7lLHu94wT9Ij0o6EWWclhu0aOh32VxhkwEJvzuWPeak=
 github.com/onsi/gomega v1.13.0/go.mod h1:lRk9szgn8TxENtWd0Tp4c3wjlRfMTMH27I+3Je41yGY=
-github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b h1:lRKMWWtTsy//TJqGYIZbpelBVotp0ZgWFaUspMEqZ9c=
-github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b/go.mod h1:F2t4tTJeDGWOGepcRt46YVKbf+IMS7huFQ3JjvlxkOc=
-github.com/open-cluster-management/library-e2e-go v0.0.0-20210219164826-04b5828bcc17 h1:0rWkro61KuKj9CQ6ibfx/REE8ReL9/9phmvLCTuQ5kc=
-github.com/open-cluster-management/library-e2e-go v0.0.0-20210219164826-04b5828bcc17/go.mod h1:EiRdCpdqmpdQ6toJqSi2E+IbjsLcrkXNCHUyOaVS0+Y=
-github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7 h1:saI3NoG6FedgVFMHQo+SfUvtDGAKjMzS8WrCu6ZWEeg=
-github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7/go.mod h1:N7Mi4eqvPUnCQqbZ1OAzceZ+2aHpixG3tMRwSHfLBCg=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
@@ -366,6 +360,12 @@ github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnIn
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/spf13/viper v1.7.0/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
+github.com/stolostron/applier v0.0.0-20220112154420-0e11c63188ab h1:Q6naTy4B7lIByLuvcMzlMuf+oXHViNhkf6nzegWKnCM=
+github.com/stolostron/applier v0.0.0-20220112154420-0e11c63188ab/go.mod h1:CuvgpKgLmI7HIsmrMCWXbiMcfZdTW4zbFMaEY0lsbH0=
+github.com/stolostron/library-e2e-go v0.0.0-20220112062416-0820a253cf3b h1:j64ouWU38TB33Au68fL/zlRu4bfdxLDMgiQbgVp2Nj8=
+github.com/stolostron/library-e2e-go v0.0.0-20220112062416-0820a253cf3b/go.mod h1:Iy7v/q4EYsWfopuWsq5vk3+Q9pRKYBgxRyId1UHE0KU=
+github.com/stolostron/library-go v0.0.0-20220112062416-536980fdb526 h1:IadJlvFmTfCPKAgBauQ4i48SUKAlV+U1Q3eror5Hljw=
+github.com/stolostron/library-go v0.0.0-20220112062416-536980fdb526/go.mod h1:UCofg6BXoF5ciiQBqjMLbD7PoY7QfmKuYLaVRTaPkY0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=

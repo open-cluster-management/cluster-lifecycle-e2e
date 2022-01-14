@@ -9,7 +9,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
+	libgocmd "github.com/stolostron/library-e2e-go/pkg/cmd"
 	"k8s.io/klog"
 )
 

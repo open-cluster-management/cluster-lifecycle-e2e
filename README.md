@@ -24,7 +24,7 @@ The tests in this container will:
 1. clone this repo:
 
 ```
-$ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
+$ git clone git@github.com:stolostron/cluster-lifecycle-e2e.git
 ```
 
 2. copy `pkg/resources/options_template.yaml` to `pkg/resources/options.yaml`, and update values specific to your environment:
@@ -56,7 +56,7 @@ ginkgo -v -p -focus="import" -stream pkg/tests/import_cluster -- -options=../../
 1. clone this repo:
 
 ```
-$ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
+$ git clone git@github.com:stolostron/cluster-lifecycle-e2e.git
 $ cd cluster-lifecycle-e2e
 ```
 

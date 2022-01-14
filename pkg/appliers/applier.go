@@ -5,9 +5,9 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/open-cluster-management/applier/pkg/applier"
-	"github.com/open-cluster-management/applier/pkg/templateprocessor"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/stolostron/applier/pkg/applier"
+	"github.com/stolostron/applier/pkg/templateprocessor"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
 )
 
 const (
