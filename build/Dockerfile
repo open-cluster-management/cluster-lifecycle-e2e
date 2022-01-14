@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux as builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.16-linux as builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR

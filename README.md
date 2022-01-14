@@ -24,7 +24,7 @@ The tests in this container will:
 1. clone this repo:
 
 ```
-$ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
+$ git clone git@github.com:stolostron/cluster-lifecycle-e2e.git
 ```
 
 2. copy `e2e-test/resources/options.yaml.template` to `e2e-test/resources/options.yaml`, and update values specific to your environment:
@@ -45,7 +45,7 @@ $ ginkgo -v -p -stream -- -options=e2e-test/resources/options.yaml -v=3
 1. clone this repo:
 
 ```
-$ git clone git@github.com:open-cluster-management/cluster-lifecycle-e2e.git
+$ git clone git@github.com:stolostron/cluster-lifecycle-e2e.git
 $ cd cluster-lifecycle-e2e
 ```
 
