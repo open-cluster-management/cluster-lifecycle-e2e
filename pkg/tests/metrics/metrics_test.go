@@ -18,9 +18,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/tests/options"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/tests/options"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/utils"
 )
 
 const (
@@ -137,7 +137,7 @@ func getMetricsQuery(queryExpression string) (resp *http.Response, body []byte, 
 	bearerToken := hubClients.RestConfig.BearerToken
 	req.Header.Add("Authorization", "Bearer "+bearerToken)
 
-	//Set true to insecureSkipVerify if kube config is set so
+	// Set true to insecureSkipVerify if kube config is set so
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: hubClients.RestConfig.Insecure},
 	}

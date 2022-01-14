@@ -16,13 +16,13 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
-	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
-	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
-	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
-	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
-	libgoconfig "github.com/open-cluster-management/library-go/pkg/config"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/utils"
+	libgooptions "github.com/stolostron/library-e2e-go/pkg/options"
+	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
+	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
+	libgoclient "github.com/stolostron/library-go/pkg/client"
+	libgoconfig "github.com/stolostron/library-go/pkg/config"
 
 	"k8s.io/klog"
 )
