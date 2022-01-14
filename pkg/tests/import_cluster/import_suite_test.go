@@ -12,8 +12,8 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
-	libgounstructuredv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/unstructured"
+	libgocmd "github.com/stolostron/library-e2e-go/pkg/cmd"
+	libgounstructuredv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/unstructured"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
