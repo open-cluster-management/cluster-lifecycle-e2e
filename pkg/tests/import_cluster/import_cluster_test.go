@@ -17,15 +17,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-cluster-management/applier/pkg/applier"
-	"github.com/open-cluster-management/applier/pkg/templateprocessor"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/appliers"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
-	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
-	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
-	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
-	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
+	"github.com/stolostron/applier/pkg/applier"
+	"github.com/stolostron/applier/pkg/templateprocessor"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/appliers"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/utils"
+	libgooptions "github.com/stolostron/library-e2e-go/pkg/options"
+	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
+	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
+	libgoclient "github.com/stolostron/library-go/pkg/client"
 
 	"k8s.io/klog"
 )
@@ -48,7 +48,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 
 	It("Given a list of clusters to import (cluster/g0/import-service-resources)", func() {
 		hubApplier := appliers.GetHubAppliers(hubClients)
-		//for clusterName, clusterKubeconfig := range managedClustersForManualImport {
+		// for clusterName, clusterKubeconfig := range managedClustersForManualImport {
 		for _, managedCluster := range libgooptions.TestOptions.Options.ManagedClusters {
 			var clusterName = managedCluster.Name
 			klog.V(1).Infof("========================= Test cluster import cluster %s ===============================", clusterName)
@@ -83,7 +83,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 			}).Should(BeNil())
 
 			By("creating the namespace in which the cluster will be imported", func() {
-				//Create the cluster NS on master
+				// Create the cluster NS on master
 				klog.V(1).Infof("Cluster %s: Creating the namespace in which the cluster will be imported", clusterName)
 				namespaces := hubClients.KubeClient.CoreV1().Namespaces()
 				_, err := namespaces.Get(context.TODO(), clusterName, metav1.GetOptions{})
@@ -144,7 +144,7 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 				managedClusterApplier, err := applier.NewApplier(importStringReader, &templateprocessor.Options{}, managedClusterClient, nil, nil, nil)
 				Expect(err).To(BeNil())
 				Expect(managedClusterApplier.CreateOrUpdateInPath(".", nil, false, nil)).NotTo(HaveOccurred())
-				//Wait 2 sec to make sure the CRDs are effective. The UI does the same.
+				// Wait 2 sec to make sure the CRDs are effective. The UI does the same.
 				time.Sleep(2 * time.Second)
 				klog.V(1).Infof("Cluster %s: Apply the import.yaml", clusterName)
 				klog.V(5).Infof("Cluster %s: importSecret.Data[import.yaml]: %s\n", clusterName, importSecret.Data["import.yaml"])
@@ -197,7 +197,7 @@ func isAPIExtensionV1(kubeConfig string) (bool, error) {
 		return false, err
 	}
 
-	//Search the kubernestes version by connecting to the managed cluster
+	// Search the kubernestes version by connecting to the managed cluster
 	kubeVersion, err := kubeClient.ServerVersion()
 	if err != nil {
 		return false, err

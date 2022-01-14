@@ -23,14 +23,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-cluster-management/applier/pkg/applier"
-	"github.com/open-cluster-management/applier/pkg/templateprocessor"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/appliers"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	libgooptions "github.com/open-cluster-management/library-e2e-go/pkg/options"
-	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
-	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
-	libgounstructuredv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/unstructured"
+	"github.com/stolostron/applier/pkg/applier"
+	"github.com/stolostron/applier/pkg/templateprocessor"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/appliers"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	libgooptions "github.com/stolostron/library-e2e-go/pkg/options"
+	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
+	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
+	libgounstructuredv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/unstructured"
 )
 
 // list of manifestwork name for addon crs
@@ -51,15 +51,15 @@ var (
 const (
 	NeedInvestigate              = "[need investigate]"
 	KnownIssueTag                = "[known issue]"
-	DetachKnownIssueLink         = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#klusterlet-crd-can-not-be-deleted"
+	DetachKnownIssueLink         = "https://github.com/stolostron/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#klusterlet-crd-can-not-be-deleted"
 	QuotaLimitTag                = "[quota limit]"
-	ProvisionQuotaLimitErrorLink = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#quota-limit-in-awsazuregcp"
+	ProvisionQuotaLimitErrorLink = "https://github.com/stolostron/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#quota-limit-in-awsazuregcp"
 	UnknownError                 = "[unknown error]"
-	ProvisionUnknownErrorLink    = "https://github.com/open-cluster-management/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#cloud-providerawsgcpazure-bug-or-ocp-installer-bug"
+	ProvisionUnknownErrorLink    = "https://github.com/stolostron/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#cloud-providerawsgcpazure-bug-or-ocp-installer-bug"
 
-	//List key word about quota limit which can not be identified in clusterdeployment.
+	// List key word about quota limit which can not be identified in clusterdeployment.
 
-	//failed to fetch dependency of \"Cluster\": failed to generate asset \"Platform Quota Check\": error(MissingQuota): compute.googleapis.com/firewalls is not available in global because the required number of resources (6) is more than remaining quota of 0\n,",
+	// failed to fetch dependency of \"Cluster\": failed to generate asset \"Platform Quota Check\": error(MissingQuota): compute.googleapis.com/firewalls is not available in global because the required number of resources (6) is more than remaining quota of 0\n,",
 	gcpQuotaLimitMsg = "more than remaining quota"
 )
 
@@ -174,7 +174,7 @@ with image %s ===============================`, clusterName, imageRefName)
 		})
 
 		By("creating the namespace in which the cluster will be imported", func() {
-			//Create the cluster NS on master
+			// Create the cluster NS on master
 			klog.V(1).Infof("Cluster %s: Creating the namespace in which the cluster will be imported", clusterName)
 			namespaces := hubClients.KubeClient.CoreV1().Namespaces()
 			_, err := namespaces.Get(context.TODO(), clusterName, metav1.GetOptions{})
@@ -233,12 +233,12 @@ with image %s ===============================`, clusterName, imageRefName)
 			klog.V(1).Infof("Cluster %s: Creating install config secret", clusterName)
 			Expect(createInstallConfig(hubAppliers.CreateApplier, hubAppliers.CreateTemplateProcessor, clusterName, cloud)).To(BeNil())
 
-			//imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
+			// imageRefName = libgooptions.TestOptions.ManagedClusters.ImageSetRefName
 
 			if libgooptions.TestOptions.Options.OCPReleaseVersion != "" && cloud != "baremetal" {
 				imageRefName, err = createClusterImageSet(hubAppliers.CreateApplier, clusterNameObj, libgooptions.TestOptions.Options.OCPReleaseVersion)
 				Expect(err).To(BeNil())
-				//imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
+				// imageRefName = libgooptions.TestOptions.Options.OCPReleaseVersion
 			} else {
 				gvr := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterimagesets"}
 				imagesetsList, err := hubClients.DynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
@@ -293,7 +293,7 @@ with image %s ===============================`, clusterName, imageRefName)
 				ManagedClusterRegion:     region,
 				ManagedClusterVendor:     vendor,
 				ManagedClusterBaseDomain: baseDomain,
-				//TODO: parametrize the image
+				// TODO: parametrize the image
 				ManagedClusterImageRefName:  imageRefName,
 				ManagedClusterBaseDomainRGN: libgooptions.TestOptions.Options.CloudConnection.APIKeys.Azure.BaseDomainRGN,
 				SSHKnownHosts:               libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.SSHKnownHostsList,
@@ -725,7 +725,7 @@ func validateClusterImported(hubClientDynamic dynamic.Interface, hubClient kuber
 }
 
 func WaitClusterAdddonsAvailable(hubClientDynamic dynamic.Interface, clusterName string) {
-	//gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
+	// gvr := schema.GroupVersionResource{Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons"}
 	for _, addOnName := range managedClusteraddOns {
 		if !(clusterName == "local-cluster" && addOnName == "search-collector") {
 			Eventually(func() error {

@@ -12,10 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/utils"
-	libgocrdv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/crd"
-	libgodeploymentv1 "github.com/open-cluster-management/library-go/pkg/apis/meta/v1/deployment"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/utils"
+	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
+	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
 
 	"k8s.io/klog"
 )
