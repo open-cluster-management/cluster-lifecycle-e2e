@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
+	libgocmd "github.com/stolostron/library-e2e-go/pkg/cmd"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"

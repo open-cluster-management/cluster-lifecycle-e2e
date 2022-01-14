@@ -10,8 +10,8 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"github.com/open-cluster-management/cluster-lifecycle-e2e/pkg/clients"
-	libgocmd "github.com/open-cluster-management/library-e2e-go/pkg/cmd"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	libgocmd "github.com/stolostron/library-e2e-go/pkg/cmd"
 	"k8s.io/klog"
 )
 
