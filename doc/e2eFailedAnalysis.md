@@ -26,3 +26,6 @@ The error should be like:
 ### klusterlet CRD can not be deleted
 There is a known issue for ACM 2.3, the klusterlet crd may not be deleted when detaching a cluster.
 **Please ignore the error and rerun the e2e.**
+
+## Unknown error
+Need investigate
