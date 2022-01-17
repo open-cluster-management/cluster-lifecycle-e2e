@@ -56,6 +56,7 @@ const (
 	UnknownError                 = "[unknown error]"
 	ProvisionUnknownErrorLink    = "https://github.com/stolostron/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#cloud-providerawsgcpazure-bug-or-ocp-installer-bug"
 
+	UnknownErrorLink = "https://github.com/stolostron/cluster-lifecycle-e2e/blob/main/doc/e2eFailedAnalysis.md#unknown-error"
 	// List key word about quota limit which can not be identified in clusterdeployment.
 
 	// failed to fetch dependency of \"Cluster\": failed to generate asset \"Platform Quota Check\": error(MissingQuota): compute.googleapis.com/firewalls is not available in global because the required number of resources (6) is more than remaining quota of 0\n,",
@@ -88,7 +89,7 @@ func checkClusterImported(hubClientDynamic dynamic.Interface, clusterName string
 		return nil
 	} else {
 		klog.V(4).Infof("Cluster %s: Current is not equal to \"%s\" but \"%v\"", clusterName, metav1.ConditionTrue, v)
-		return fmt.Errorf("status is %s", v)
+		return GenerateErrorMsg(UnknownError, UnknownErrorLink, "Import cluster fail, Cluster status in unknown", "Import cluster fail, Cluster status in unknown")
 	}
 }
 
