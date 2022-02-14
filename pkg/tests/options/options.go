@@ -15,6 +15,7 @@ import (
 var BaseDomain string
 var KubeadminUser string
 var KubeadminCredential string
+var ClusterName string
 
 func InitVars() error {
 
@@ -26,6 +27,10 @@ func InitVars() error {
 
 	if libgooptions.TestOptions.Options.Hub.KubeConfig == "" {
 		libgooptions.TestOptions.Options.Hub.KubeConfig = os.Getenv("KUBECONFIG")
+	}
+
+	if libgooptions.TestOptions.Options.Hub.Name != "" {
+		ClusterName = libgooptions.TestOptions.Options.Hub.Name
 	}
 
 	if libgooptions.TestOptions.Options.Hub.BaseDomain != "" {

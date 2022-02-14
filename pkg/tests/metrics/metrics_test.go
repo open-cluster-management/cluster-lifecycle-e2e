@@ -57,7 +57,7 @@ var prometheusQueryURL string
 
 var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics", func() {
 	BeforeEach(func() {
-		prometheusQueryURL = fmt.Sprintf("%s.%s/%s", prometheusServiceURL, options.BaseDomain, metricQueryURI)
+		prometheusQueryURL = fmt.Sprintf("%s.%s.%s/%s", prometheusServiceURL, options.ClusterName, options.BaseDomain, metricQueryURI)
 		SetDefaultEventuallyTimeout(1 * time.Minute)
 		SetDefaultEventuallyPollingInterval(10 * time.Second)
 	})
@@ -154,5 +154,5 @@ func getMetricsQuery(queryExpression string) (resp *http.Response, body []byte, 
 			log.Fatal(err)
 		}
 	}
-	return
+	return resp, body, err
 }
