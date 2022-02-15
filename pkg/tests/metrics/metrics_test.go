@@ -114,6 +114,12 @@ var _ = Describe("Cluster-lifecycle: [P2][Sev1][cluster-lifecycle] Check metrics
 					klog.V(2).Infof("err: %s", err)
 					return err
 				}
+
+				if len(qr.Data.Result) == 0 {
+					err = fmt.Errorf("failed to get data. %v", qr.Status)
+					return err
+				}
+
 				if qr.Data.Result[0].Value[1].(string) != "1" {
 					err = fmt.Errorf("Expected value 1 got %s", qr.Data.Result[0].Value[1].(string))
 					klog.V(2).Infof("err: %s", err)
