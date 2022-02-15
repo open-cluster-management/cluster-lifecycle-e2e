@@ -143,9 +143,20 @@ with image %s ===============================`, clusterName, imageRefName)
 
 			Eventually(func() bool {
 				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
-					"open-cluster-management",
+					"multicluster-engine",
 					[]string{
 						"managedcluster-import-controller-v2",
+					})
+				if !has {
+					klog.Errorf("Cluster %s: Missing deployments\n%#v", clusterName, missing)
+				}
+				return has
+			}).Should(BeTrue())
+
+			Eventually(func() bool {
+				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
+					"open-cluster-management",
+					[]string{
 						"klusterlet-addon-controller-v2",
 					})
 				if !has {
@@ -823,7 +834,7 @@ func DestroyCluster(cloud, vendor, cloudProviders string) {
 
 			Eventually(func() bool {
 				has, missing, _ := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
-					"open-cluster-management",
+					"multicluster-engine",
 					[]string{"managedcluster-import-controller-v2"})
 				if !has {
 					klog.Errorf("Cluster %s: Missing deployments\n%#v", clusterName, missing)

@@ -67,9 +67,17 @@ var _ = Describe("Cluster-lifecycle: [P1][Sev1][cluster-lifecycle] Import cluste
 
 			Eventually(func() error {
 				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
-					"open-cluster-management",
+					"multicluster-engine",
 					[]string{
 						"managedcluster-import-controller-v2",
+					})
+				return err
+			}).Should(BeNil())
+
+			Eventually(func() error {
+				_, _, err := libgodeploymentv1.HasDeploymentsInNamespace(hubClients.KubeClient,
+					"open-cluster-management",
+					[]string{
 						"klusterlet-addon-controller-v2",
 					})
 				return err
