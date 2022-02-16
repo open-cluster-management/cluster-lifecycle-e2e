@@ -15,7 +15,6 @@ import (
 var BaseDomain string
 var KubeadminUser string
 var KubeadminCredential string
-var ClusterName string
 
 func InitVars() error {
 
@@ -29,15 +28,11 @@ func InitVars() error {
 		libgooptions.TestOptions.Options.Hub.KubeConfig = os.Getenv("KUBECONFIG")
 	}
 
-	if libgooptions.TestOptions.Options.Hub.Name != "" {
-		ClusterName = libgooptions.TestOptions.Options.Hub.Name
-	}
-
 	if libgooptions.TestOptions.Options.Hub.BaseDomain != "" {
 		BaseDomain = libgooptions.TestOptions.Options.Hub.BaseDomain
 
 		if libgooptions.TestOptions.Options.Hub.ApiServerURL == "" {
-			libgooptions.TestOptions.Options.Hub.ApiServerURL = fmt.Sprintf("https://api.%s.%s:6443", libgooptions.TestOptions.Options.Hub.Name, libgooptions.TestOptions.Options.Hub.BaseDomain)
+			libgooptions.TestOptions.Options.Hub.ApiServerURL = fmt.Sprintf("https://api.%s:6443", libgooptions.TestOptions.Options.Hub.BaseDomain)
 		}
 	} else {
 		gomega.Expect(BaseDomain).NotTo(gomega.BeEmpty(), "The `baseDomain` is required.")
@@ -63,5 +58,6 @@ func InitVars() error {
 		}
 	}
 
+	klog.Infof("options:%#v", libgooptions.TestOptions.Options)
 	return nil
 }
