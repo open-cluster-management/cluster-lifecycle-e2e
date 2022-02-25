@@ -38,7 +38,8 @@ var managedClusteraddOns = []string{
 	"application-manager",
 	"cert-policy-controller",
 	"iam-policy-controller",
-	"policy-controller",
+	"cert-policy-controller",
+	"governance-policy-framework",
 	"search-collector",
 	"work-manager",
 }
