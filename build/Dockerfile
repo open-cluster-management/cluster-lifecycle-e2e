@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/stolostron/builder:go1.16-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
@@ -7,13 +7,13 @@ COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
 
 # compile go tests in build image
-# RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@vv1.16.4 && GOFLAGS="" ginkgo build -tags e2e pkg/tests 
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/metrics
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/create_cluster
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/create_cluster_bm
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/import_cluster
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/detach_destroy
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4 && GOFLAGS="" ginkgo build pkg/tests/destroy_bm
+# RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@vv1.16.5 && GOFLAGS="" ginkgo build -tags e2e pkg/tests
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/metrics
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster_bm
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/import_cluster
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/detach_destroy
+RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/destroy_bm
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 

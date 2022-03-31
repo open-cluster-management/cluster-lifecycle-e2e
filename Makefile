@@ -58,7 +58,7 @@ push:: docker/tag docker/login
 
 .PHONY: build
 build:
-	go get -u github.com/onsi/ginkgo/ginkgo@v1.16.4
+	go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5
 	ginkgo build pkg/tests/metrics
 	ginkgo build pkg/tests/create_cluster
 	ginkgo build pkg/tests/create_cluster_bm
