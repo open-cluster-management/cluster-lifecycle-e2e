@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.18-linux AS builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
@@ -59,7 +59,7 @@ COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/create_cluster_bm/create_cl
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/import_cluster/import_cluster.test /test/import_cluster/import_cluster.test
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/detach_destroy/detach_destroy.test /test/detach_destroy/detach_destroy.test
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/destroy_bm/destroy_bm.test /test/destroy_bm/destroy_bm.test
-COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh 
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh
 VOLUME /results
 WORKDIR "/test"
 
