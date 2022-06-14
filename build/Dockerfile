@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.18-linux AS builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
@@ -7,13 +7,13 @@ COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
 
 # compile go tests in build image
-# RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@vv1.16.5 && GOFLAGS="" ginkgo build -tags e2e pkg/tests
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/metrics
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster_bm
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/import_cluster
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/detach_destroy
-RUN GOFLAGS="" go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/destroy_bm
+# RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@vv1.16.5 && GOFLAGS="" ginkgo build -tags e2e pkg/tests
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/metrics
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/create_cluster_bm
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/import_cluster
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/detach_destroy
+RUN GOFLAGS="" go install github.com/onsi/ginkgo/ginkgo@v1.16.5 && GOFLAGS="" ginkgo build pkg/tests/destroy_bm
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -59,7 +59,7 @@ COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/create_cluster_bm/create_cl
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/import_cluster/import_cluster.test /test/import_cluster/import_cluster.test
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/detach_destroy/detach_destroy.test /test/detach_destroy/detach_destroy.test
 COPY --from=builder $REMOTE_SOURCE_DIR/app/pkg/tests/destroy_bm/destroy_bm.test /test/destroy_bm/destroy_bm.test
-COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh 
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/start-tests.sh /test/start-tests.sh
 VOLUME /results
 WORKDIR "/test"
 
