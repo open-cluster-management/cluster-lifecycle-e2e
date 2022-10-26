@@ -7,10 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -20,9 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-
 	corev1 "k8s.io/api/core/v1"
-
 	"github.com/stolostron/applier/pkg/applier"
 	"github.com/stolostron/applier/pkg/templateprocessor"
 	"github.com/stolostron/cluster-lifecycle-e2e/pkg/appliers"
