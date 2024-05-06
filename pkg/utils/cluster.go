@@ -7,8 +7,18 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stolostron/applier/pkg/applier"
+	"github.com/stolostron/applier/pkg/templateprocessor"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/appliers"
+	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
+	libgooptions "github.com/stolostron/library-e2e-go/pkg/options"
+	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
+	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
+	libgounstructuredv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/unstructured"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -18,22 +28,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-	corev1 "k8s.io/api/core/v1"
-	"github.com/stolostron/applier/pkg/applier"
-	"github.com/stolostron/applier/pkg/templateprocessor"
-	"github.com/stolostron/cluster-lifecycle-e2e/pkg/appliers"
-	"github.com/stolostron/cluster-lifecycle-e2e/pkg/clients"
-	libgooptions "github.com/stolostron/library-e2e-go/pkg/options"
-	libgocrdv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/crd"
-	libgodeploymentv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/deployment"
-	libgounstructuredv1 "github.com/stolostron/library-go/pkg/apis/meta/v1/unstructured"
 )
 
 // list of manifestwork name for addon crs
 var managedClusteraddOns = []string{
 	"application-manager",
 	"cert-policy-controller",
-	"iam-policy-controller",
 	"cert-policy-controller",
 	"governance-policy-framework",
 	"search-collector",
@@ -111,7 +111,7 @@ func CreateCluster(cloud, vendor, cloudProviders string) {
 		if cloud == "baremetal" {
 			clusterName = libgooptions.TestOptions.Options.CloudConnection.APIKeys.BareMetal.ClusterName
 		}
-		klog.V(1).Infof(`========================= Start Test create cluster %s 
+		klog.V(1).Infof(`========================= Start Test create cluster %s
 with image %s ===============================`, clusterName, imageRefName)
 		SetDefaultEventuallyTimeout(10 * time.Minute)
 		SetDefaultEventuallyPollingInterval(10 * time.Second)
